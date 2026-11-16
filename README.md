@@ -9,15 +9,14 @@ A production-quality, Dockerized platform for a single Admin to manage all of an
 ```
 cw_SubFlow_fullstack/
 ├── docker-compose.yml          # frontend + backend + postgres:16 (healthcheck, volume, init scripts)
-├── .env.example                # copy to .env
-├── backend/                    # NestJS: auth, admin(seed), categories, subscriptions,
+├── backend/                    # NestJS (.env lives here): auth, admin(seed), categories, subscriptions,
 │   ├── database/init/          #   manual SQL schema, mounted to /docker-entrypoint-initdb.d
 │   │   ├── 001_create_admins.sql        # pgcrypto + admins
 │   │   ├── 002_create_categories.sql
 │   │   ├── 003_create_subscriptions.sql # subscriptions + payment_history, CHECK constraints
 │   │   └── 004_create_indexes.sql
 │   └── src/                    #   dashboard, renewals, database (pg Pool), common (guard/filter)
-└── frontend/                   # Next.js App Router
+└── frontend/                   # Next.js App Router (.env lives here)
     ├── app/                    # login, dashboard/* (categories, subscriptions, renewals, settings)
     ├── components/             # layout (Sidebar/Header), ui (shadcn-style primitives), dashboard charts, subscription form (sections A–E)
     ├── lib/                    # api.ts (fetch client), validations (Zod), utils
@@ -25,11 +24,34 @@ cw_SubFlow_fullstack/
     └── app/globals.css         # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
 ```
 
-## Quick start (Docker)
+## Quick start (separate dev servers — recommended)
+
+There is **no root `.env`**. Each app has its own env file: `backend/.env` and `frontend/.env`.
+
+```powershell
+# 0. Database only (from the project root) — creates all tables on first start:
+cd backend; Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD
+cd ..
+docker compose --env-file backend/.env up -d postgres
+
+# 1. Backend (terminal 1):
+cd backend
+npm install
+npm run seed          # creates the admin account from backend/.env
+npm run start:dev     # API on http://localhost:4000
+
+# 2. Frontend (terminal 2):
+cd frontend
+Copy-Item .env.example .env
+npm install
+npm run dev           # website on http://localhost:3000
+```
+
+## Quick start (full Docker)
 
 ```bash
-cp .env.example .env        # edit passwords / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD
-docker compose up --build
+# backend/.env must exist first (see step 0 above)
+docker compose --env-file backend/.env up --build
 # Frontend: http://localhost:3000   Backend API: http://localhost:4000/api
 ```
 
@@ -47,17 +69,17 @@ There is **no public registration** — exactly one admin exists.
 - Login (`POST /api/auth/login`) sets an **HTTP-only cookie** `subflow_token` (JWT). `GET /api/auth/me` validates the session, `POST /api/auth/logout` clears it. Next.js middleware protects `/dashboard/*` and redirects to `/login`.
 - To change credentials: update the env vars and re-run the seed.
 
-## Local development (without Docker)
+## Local development (own local Postgres, no Docker at all)
 
 ```bash
-# 1. Postgres (any local instance), then apply schema in order:
+# 1. Create the database, then apply schema in order:
 psql -d subflow -f backend/database/init/001_create_admins.sql   # …002, 003, 004
 
 # 2. Backend
 cd backend && cp .env.example .env && npm install && npm run seed && npm run start:dev   # :4000
 
 # 3. Frontend
-cd frontend && cp .env.example .env.local && npm install && npm run dev                  # :3000
+cd frontend && cp .env.example .env && npm install && npm run dev                        # :3000
 ```
 
 > Schema changes on an existing database: write a new numbered SQL file in `backend/database/init/` and apply it manually with `psql` — there is intentionally **no ORM migration tool**.
