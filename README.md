@@ -8,7 +8,7 @@ A production-quality, Dockerized platform for a single Admin to manage all of an
 
 ```
 cw_SubFlow_fullstack/
-├── docker-compose.yml          # frontend + backend + postgres:16 (healthcheck, volume, init scripts)
+├── docker-compose.yml          # backend stack only: postgres:16 + NestJS backend (frontend runs via npm)
 ├── backend/                    # NestJS (.env lives here): auth, admin(seed), categories, subscriptions,
 │   ├── database/init/          #   manual SQL schema, mounted to /docker-entrypoint-initdb.d
 │   │   ├── 001_create_admins.sql        # pgcrypto + admins
@@ -24,38 +24,29 @@ cw_SubFlow_fullstack/
     └── app/globals.css         # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
 ```
 
-## Quick start (separate dev servers — recommended)
+## Quick start
 
 There is **no root `.env`**. Each app has its own env file: `backend/.env` and `frontend/.env`.
+The **backend (Postgres + API) runs entirely in Docker with one command**; the **frontend runs with npm**.
 
 ```powershell
-# 0. Database only (from the project root) — creates all tables on first start:
+# 0. One-time: create the backend env file and set your values:
 cd backend; Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD
 cd ..
-docker compose --env-file backend/.env up -d postgres
 
-# 1. Backend (terminal 1):
-cd backend
-npm install
-npm run seed          # creates the admin account from backend/.env
-npm run start:dev     # API on http://localhost:4000
+# 1. Backend — ONE Docker command (from the project root):
+docker compose --env-file backend/.env up -d --build
+#    Starts Postgres (tables auto-created on first run) + backend API on http://localhost:4000
+#    The backend container also runs the admin seed on start — no separate seed command needed.
 
-# 2. Frontend (terminal 2):
+# 2. Frontend — npm (separate terminal):
 cd frontend
-Copy-Item .env.example .env
-npm install
-npm run dev           # website on http://localhost:3000
+Copy-Item .env.example .env   # one-time
+npm i
+npm run dev                   # website on http://localhost:3000
 ```
 
-## Quick start (full Docker)
-
-```bash
-# backend/.env must exist first (see step 0 above)
-docker compose --env-file backend/.env up --build
-# Frontend: http://localhost:3000   Backend API: http://localhost:4000/api
-```
-
-PostgreSQL init scripts run automatically on a **fresh** volume. The backend container runs the admin seed on start.
+Stop the backend with `docker compose down` (from the project root); your data stays in the volume.
 
 ## Admin account (seed)
 

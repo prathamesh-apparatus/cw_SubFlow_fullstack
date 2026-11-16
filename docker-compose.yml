@@ -1,6 +1,7 @@
-# SubFlow — no root .env. Backend env lives in backend/.env, frontend env in frontend/.env.
-# Full-Docker run (from project root):  docker compose --env-file backend/.env up --build
-# Database-only run (for npm dev):      docker compose --env-file backend/.env up -d postgres
+# SubFlow backend stack ONLY (Postgres + NestJS backend). The frontend is NOT in Docker —
+# run it with npm:  cd frontend && npm i && npm run dev
+# Whole backend in ONE command (from project root):  docker compose --env-file backend/.env up -d --build
+# No root .env — backend env lives in backend/.env, frontend env in frontend/.env.
 services:
   postgres:
     image: postgres:16-alpine
@@ -35,16 +36,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [subflow_net]
-  frontend:
-    build: ./frontend
-    container_name: subflow_frontend
-    restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000/api
-    ports:
-      - "3000:3000"
-    depends_on: [backend]
     networks: [subflow_net]
 volumes:
   postgres_data:
