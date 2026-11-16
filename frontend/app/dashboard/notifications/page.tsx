@@ -5,9 +5,11 @@ import { Bell, BellOff, CalendarClock, CalendarX, CheckCheck, CreditCard, Loader
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { notificationsService, type NotificationItem } from '@/services/notifications.service';
 import { cn, formatDate } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
+const PAGE_SIZE = 10;
 
 const META: Record<string, { icon: typeof Bell; cls: string }> = {
   renewal_overdue: { icon: CalendarX, cls: 'bg-red-50 text-red-600' },
@@ -32,13 +34,18 @@ export default function NotificationsPage() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     notificationsService.list()
-      .then((r) => { setItems(r.items || []); setUnread(r.unread || 0); })
+      .then((r) => { setItems(r.items || []); setUnread(r.unread || 0); setPage(1); })
       .catch(() => toast.error('Could not load notifications'))
       .finally(() => setLoading(false));
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const pageItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const open = (n: NotificationItem) => {
     if (!n.is_read) {
@@ -54,6 +61,7 @@ export default function NotificationsPage() {
       await notificationsService.markAllRead();
       setItems((prev) => prev.map((x) => ({ ...x, is_read: true })));
       setUnread(0);
+      setPage(1);
       toast.success('All notifications marked as read');
     } catch { toast.error('Could not mark notifications as read'); }
   };
@@ -78,9 +86,10 @@ export default function NotificationsPage() {
           <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">New renewal and payment alerts will appear here as they happen.</p>
         </Card>
       ) : (
+        <>
         <Card className="overflow-hidden">
           <div className="divide-y divide-border">
-            {items.map((n) => {
+            {pageItems.map((n) => {
               const meta = META[n.type] || { icon: Bell, cls: 'bg-secondary text-muted-foreground' };
               const Icon = meta.icon;
               return (
@@ -97,6 +106,8 @@ export default function NotificationsPage() {
             })}
           </div>
         </Card>
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
     </div>
   );

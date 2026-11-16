@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog';
+import { Pagination } from '@/components/ui/pagination';
 import { CategoryDrawer } from '@/components/categories/category-drawer';
 import { categoryService } from '@/services/category.service';
 import { categorySchema, CategoryFormValues } from '@/lib/validations';
@@ -16,15 +17,23 @@ import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import type { Category } from '@/types';
 export const dynamic = 'force-dynamic';
+const PAGE_SIZE = 10;
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]); const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(''); const [sort, setSort] = useState('name_asc');
   const [dialog, setDialog] = useState(false); const [editing, setEditing] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null); const [delLoading, setDelLoading] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CategoryFormValues>({ resolver: zodResolver(categorySchema) });
   const load = useCallback(() => { setLoading(true); categoryService.list(search, sort).then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [search, sort]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
+  useEffect(() => { setPage(1); }, [search, sort]);
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const pagedItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const from = items.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, items.length);
   const openCreate = () => { setEditing(null); reset({ name: '', description: '' }); setDialog(true); };
   const openEdit = (c: Category) => { setEditing(c); reset({ name: c.name, description: c.description || '' }); setDialog(true); };
   const onSubmit = async (v: CategoryFormValues) => { try { if (editing) { await categoryService.update(editing.id, v); toast.success('Category updated'); } else { await categoryService.create(v); toast.success('Category created'); } setDialog(false); load(); } catch (e: any) { toast.error(e.message); } };
@@ -55,7 +64,7 @@ export default function CategoriesPage() {
               <tbody>
                 {items.length === 0 ? (
                   <tr className="border-t border-border/70"><td colSpan={5} className="px-5 py-10 text-center text-sm text-muted-foreground">No categories found.</td></tr>
-                ) : items.map((c) => (
+                ) : pagedItems.map((c) => (
                   <tr key={c.id} className="border-t border-border/70 transition-colors hover:bg-accent/40">
                     <td className="px-5 py-3 align-middle">
                       <div className="flex items-center gap-3">
@@ -81,7 +90,8 @@ export default function CategoriesPage() {
               </tbody>
             </table>
           </div>
-          <p className="border-t px-4 py-2.5 text-[11px] text-muted-foreground">Showing {items.length} categories</p>
+          <p className="border-t px-4 py-2.5 text-[11px] text-muted-foreground">Showing {from}–{to} of {items.length} categories</p>
+          {totalPages > 1 && <div className="px-4 pb-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>}
         </CardContent></Card>)}
       <Dialog open={dialog} onClose={() => setDialog(false)} title={editing ? 'Edit Category' : 'Create Category'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
