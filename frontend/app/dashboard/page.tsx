@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw } from 'lucide-react';
+import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +44,10 @@ export default function DashboardPage() {
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />SubFlow Overview</p>
           <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Dashboard</h2>
         </div>
-        <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}><RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} /> Refresh</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}><RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} /> Refresh</Button>
+          <Link href="/dashboard/subscriptions/new"><Button size="sm"><Plus className="h-3.5 w-3.5" /> Add Subscription</Button></Link>
+        </div>
       </div>
 
       <Card>
