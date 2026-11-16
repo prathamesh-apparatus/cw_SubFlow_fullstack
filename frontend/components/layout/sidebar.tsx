@@ -23,7 +23,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           <button className="lg:hidden" onClick={onClose} aria-label="Close menu"><X className="h-5 w-5" /></button>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {links.map((l) => { const active = l.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(l.href); const Icon = l.icon; return <Link key={l.href} href={l.href} onClick={onClose} className={cn('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-80 hover:bg-white/10 hover:opacity-100', active && 'bg-white/10 opacity-100')}><Icon className="h-4 w-4" />{l.label}</Link>; })}
+          {links.map((l) => { const active = l.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(l.href); const Icon = l.icon; return <Link key={l.href} href={l.href} onClick={onClose} className={cn('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-80 hover:bg-white/10 hover:opacity-100', active && 'bg-primary text-primary-foreground opacity-100 shadow-sm')}><Icon className="h-4 w-4" />{l.label}</Link>; })}
         </nav>
         <div className="p-3 border-t border-white/10"><button onClick={logout} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-80 hover:bg-white/10 hover:opacity-100"><LogOut className="h-4 w-4" />Logout</button></div>
       </aside>

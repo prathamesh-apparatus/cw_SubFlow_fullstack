@@ -13,22 +13,21 @@ import { Dialog, ConfirmDialog } from '@/components/ui/dialog';
 import { categoryService } from '@/services/category.service';
 import { categorySchema, CategoryFormValues } from '@/lib/validations';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { useToast } from '@/components/ui/toast';
+import toast from 'react-hot-toast';
 import type { Category } from '@/types';
 export const dynamic = 'force-dynamic';
 export default function CategoriesPage() {
-  const { toast } = useToast();
   const [items, setItems] = useState<Category[]>([]); const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(''); const [sort, setSort] = useState('name_asc');
   const [dialog, setDialog] = useState(false); const [editing, setEditing] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null); const [delLoading, setDelLoading] = useState(false);
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CategoryFormValues>({ resolver: zodResolver(categorySchema) });
-  const load = useCallback(() => { setLoading(true); categoryService.list(search, sort).then(setItems).catch((e) => toast({ title: e.message, variant: 'error' })).finally(() => setLoading(false)); }, [search, sort]);
+  const load = useCallback(() => { setLoading(true); categoryService.list(search, sort).then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [search, sort]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   const openCreate = () => { setEditing(null); reset({ name: '', description: '' }); setDialog(true); };
   const openEdit = (c: Category) => { setEditing(c); reset({ name: c.name, description: c.description || '' }); setDialog(true); };
-  const onSubmit = async (v: CategoryFormValues) => { try { if (editing) { await categoryService.update(editing.id, v); toast({ title: 'Category updated' }); } else { await categoryService.create(v); toast({ title: 'Category created' }); } setDialog(false); load(); } catch (e: any) { toast({ title: e.message, variant: 'error' }); } };
-  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await categoryService.remove(deleting.id); toast({ title: 'Category deleted' }); setDeleting(null); load(); } catch (e: any) { toast({ title: e.message, variant: 'error' }); setDeleting(null); } finally { setDelLoading(false); } };
+  const onSubmit = async (v: CategoryFormValues) => { try { if (editing) { await categoryService.update(editing.id, v); toast.success('Category updated'); } else { await categoryService.create(v); toast.success('Category created'); } setDialog(false); load(); } catch (e: any) { toast.error(e.message); } };
+  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await categoryService.remove(deleting.id); toast.success('Category deleted'); setDeleting(null); load(); } catch (e: any) { toast.error(e.message); setDeleting(null); } finally { setDelLoading(false); } };
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

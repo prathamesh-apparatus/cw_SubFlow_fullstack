@@ -9,18 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { subscriptionService } from '@/services/subscription.service';
 import { formatCurrency, formatDate, daysUntil } from '@/lib/utils';
-import { useToast } from '@/components/ui/toast';
+import toast from 'react-hot-toast';
 import type { Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
 export default function SubscriptionDetailsPage() {
-  const params = useParams(); const id = String(params.id); const router = useRouter(); const { toast } = useToast();
+  const params = useParams(); const id = String(params.id); const router = useRouter();
   const [sub, setSub] = useState<Subscription | null>(null); const [confirm, setConfirm] = useState(false);
-  useEffect(() => { subscriptionService.get(id).then(setSub).catch((e) => toast({ title: e.message, variant: 'error' })); }, [id]);
+  useEffect(() => { subscriptionService.get(id).then(setSub).catch((e) => toast.error(e.message)); }, [id]);
   if (!sub) return <p className="py-12 text-center text-muted-foreground">Loading…</p>;
   const days = daysUntil(sub.next_renewal_date);
   const row = (l: string, v: React.ReactNode) => <div className="flex justify-between gap-4 py-2 border-b last:border-0 text-sm"><span className="text-muted-foreground">{l}</span><span className="font-medium text-right">{v ?? '—'}</span></div>;
   const section = (title: string, rows: React.ReactNode) => <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent>{rows}</CardContent></Card>;
-  const onDelete = async () => { try { await subscriptionService.remove(id); toast({ title: 'Subscription deleted' }); router.push('/dashboard/subscriptions'); } catch (e: any) { toast({ title: e.message, variant: 'error' }); } };
+  const onDelete = async () => { try { await subscriptionService.remove(id); toast.success('Subscription deleted'); router.push('/dashboard/subscriptions'); } catch (e: any) { toast.error(e.message); } };
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-bold">{sub.name}</h2><p className="mt-1 text-sm text-muted-foreground">{sub.category_name} · Created {formatDate(sub.created_at)} · Updated {formatDate(sub.updated_at)}</p>{days !== null && <p className={`mt-2 text-sm font-medium ${days < 0 ? 'text-destructive' : days <= 7 ? 'text-yellow-600' : 'text-green-600'}`}>{days < 0 ? `Renewal overdue by ${Math.abs(days)} day(s)` : days === 0 ? 'Renews today' : `Renews in ${days} day(s)`} — {formatDate(sub.next_renewal_date)}</p>}</div><div className="flex gap-2"><Link href={`/dashboard/subscriptions/${id}/edit`}><Button variant="outline"><Pencil className="h-4 w-4" /> Edit</Button></Link><Button variant="destructive" onClick={() => setConfirm(true)}><Trash2 className="h-4 w-4" /> Delete</Button></div></div>

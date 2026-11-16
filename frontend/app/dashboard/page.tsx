@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ExpensesChart, CategoryDonut } from '@/components/dashboard/charts';
 import { dashboardService } from '@/services/dashboard.service';
+import toast from 'react-hot-toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Overview, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,8 @@ export default function DashboardPage() {
   const [renewals, setRenewals] = useState<any>(null);
   const [tab, setTab] = useState<7 | 15 | 30>(30);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  useEffect(() => { Promise.all([dashboardService.overview(), dashboardService.expenses(), dashboardService.breakdown(), dashboardService.recent(), dashboardService.renewalsGrouped()]).then(([o, e, b, r, g]) => { setOverview(o); setExpenses(e); setBreakdown(b); setRecent(r); setRenewals(g); }).catch((e) => setError(e.message || 'Failed to load dashboard')).finally(() => setLoading(false)); }, []);
+  useEffect(() => { Promise.all([dashboardService.overview(), dashboardService.expenses(), dashboardService.breakdown(), dashboardService.recent(), dashboardService.renewalsGrouped()]).then(([o, e, b, r, g]) => { setOverview(o); setExpenses(e); setBreakdown(b); setRecent(r); setRenewals(g); }).catch((e) => toast.error(e.message || 'Failed to load dashboard — make sure the backend is running.')).finally(() => setLoading(false)); }, []);
   if (loading) return <p className="py-16 text-center text-muted-foreground">Loading dashboard…</p>;
-  if (error) return <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error} — make sure the backend is running.</div>;
   const cards = [
     { label: 'Total Categories', value: overview?.total_categories ?? 0, icon: FolderOpen },
     { label: 'Total Subscriptions', value: overview?.total_subscriptions ?? 0, icon: CreditCard },

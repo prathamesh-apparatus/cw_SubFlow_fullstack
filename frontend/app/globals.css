@@ -11,35 +11,38 @@
   ============================================================
 */
 :root {
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
+  --background: 160 12% 97.5%;
+  --foreground: 200 28% 12%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --primary: 221 83% 53%;
+  --card-foreground: 200 28% 12%;
+  --primary: 163 84% 28%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222 47% 11%;
-  --destructive: 0 84% 60%;
+  --secondary: 160 18% 94%;
+  --secondary-foreground: 200 28% 12%;
+  --muted: 160 14% 94%;
+  --muted-foreground: 200 12% 42%;
+  --accent: 163 45% 92%;
+  --accent-foreground: 163 84% 22%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --success: 142 71% 45%;
-  --warning: 38 92% 50%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 221 83% 53%;
-  --radius: 0.75rem;
+  --success: 152 69% 36%;
+  --warning: 36 92% 48%;
+  --border: 165 14% 88%;
+  --input: 165 14% 86%;
+  --ring: 163 84% 28%;
+  --radius: 0.8rem;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --sidebar-bg: 222 47% 11%;
-  --sidebar-fg: 210 40% 98%;
-  --chart-1: 221 83% 53%;
-  --chart-2: 142 71% 45%;
-  --chart-3: 38 92% 50%;
-  --chart-4: 262 83% 58%;
-  --chart-5: 0 84% 60%;
+  --sidebar-bg: 192 45% 9%;
+  --sidebar-fg: 160 20% 94%;
+  --chart-1: 163 84% 28%;
+  --chart-2: 36 92% 48%;
+  --chart-3: 199 89% 42%;
+  --chart-4: 262 70% 55%;
+  --chart-5: 0 72% 51%;
 }
 * { border-color: hsl(var(--border)); }
 body { background: hsl(var(--background)); color: hsl(var(--foreground)); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 .sidebar-bg { background: hsl(var(--sidebar-bg)); color: hsl(var(--sidebar-fg)); }
+
+/* Soft elevation used by cards/dialogs — deep-teal tinted, never harsh. */
+.shadow-card { box-shadow: 0 1px 2px rgba(6, 32, 27, 0.05), 0 10px 30px -12px rgba(6, 32, 27, 0.14); }

@@ -10,21 +10,20 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import { SubscriptionTable } from '@/components/subscriptions/subscription-table';
 import { subscriptionService } from '@/services/subscription.service';
 import { categoryService } from '@/services/category.service';
-import { useToast } from '@/components/ui/toast';
+import toast from 'react-hot-toast';
 import type { Category, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
 export default function SubscriptionsPage() {
-  const { toast } = useToast();
   const [items, setItems] = useState<Subscription[]>([]); const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0); const [totalPages, setTotalPages] = useState(1); const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Subscription | null>(null); const [delLoading, setDelLoading] = useState(false);
   const [f, setF] = useState({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v, page: k === 'page' ? v : '1' }));
-  const load = useCallback(() => { setLoading(true); const params: Record<string, string> = {}; Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; }); subscriptionService.list(params).then((r) => { setItems(r.items); setTotal(r.total); setTotalPages(r.totalPages); }).catch((e) => toast({ title: e.message, variant: 'error' })).finally(() => setLoading(false)); }, [f]);
+  const load = useCallback(() => { setLoading(true); const params: Record<string, string> = {}; Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; }); subscriptionService.list(params).then((r) => { setItems(r.items); setTotal(r.total); setTotalPages(r.totalPages); }).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   useEffect(() => { categoryService.list().then(setCategories).catch(() => {}); }, []);
   const clear = () => setF({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
-  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await subscriptionService.remove(deleting.id); toast({ title: 'Subscription deleted' }); setDeleting(null); load(); } catch (e: any) { toast({ title: e.message, variant: 'error' }); } finally { setDelLoading(false); } };
+  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await subscriptionService.remove(deleting.id); toast.success('Subscription deleted'); setDeleting(null); load(); } catch (e: any) { toast.error(e.message); } finally { setDelLoading(false); } };
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

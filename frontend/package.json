@@ -2,7 +2,11 @@
   "name": "subflow-frontend",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "clsx": "^2.1.1",
@@ -11,6 +15,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.53.0",
+    "react-hot-toast": "^2.6.1",
     "recharts": "^2.12.7",
     "zod": "^3.23.8"
   },

@@ -1,6 +1,6 @@
 'use client';
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-const COLORS = ['hsl(var(--chart-1))','hsl(var(--chart-2))','hsl(var(--chart-3))','hsl(var(--chart-4))','hsl(var(--chart-5))','#64748b','#0ea5e9','#f59e0b'];
+const COLORS = ['hsl(var(--chart-1))','hsl(var(--chart-2))','hsl(var(--chart-3))','hsl(var(--chart-4))','hsl(var(--chart-5))','hsl(var(--muted-foreground))','hsl(var(--chart-3))','hsl(var(--chart-2))'];
 export function ExpensesChart({ data }: { data: { label: string; total: number }[] }) {
   if (!data.length) return <p className="py-10 text-center text-sm text-muted-foreground">No expense data yet.</p>;
   return <ResponsiveContainer width="100%" height={280}><AreaChart data={data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="label" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip formatter={(v: any) => [`₹${Number(v).toLocaleString('en-IN')}`, 'Expenses']} /><Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} /></AreaChart></ResponsiveContainer>;

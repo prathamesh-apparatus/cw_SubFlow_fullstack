@@ -11,13 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { subscriptionSchema, SubscriptionFormValues } from '@/lib/validations';
 import { categoryService } from '@/services/category.service';
 import { subscriptionService } from '@/services/subscription.service';
-import { useToast } from '@/components/ui/toast';
+import toast from 'react-hot-toast';
 import type { Category, Subscription } from '@/types';
 
 const empty: SubscriptionFormValues = { name: '', category_id: '', description: '', website_url: '', account_email: '', account_username: '', price: 0, currency: 'INR', billing_cycle: 'monthly', custom_billing_days: null, tax_amount: 0, payment_method: '', auto_pay_enabled: false, payment_status: 'pending', payment_notes: '', start_date: '', last_payment_date: '', next_renewal_date: '', end_date: '', renewal_reminder: true, reminder_days_before: 7, status: 'active', auto_renewal_enabled: false, notes: '' };
 function toDate(v?: string | null) { return v ? String(v).slice(0, 10) : ''; }
 export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Subscription; defaultCategoryId?: string }) {
-  const router = useRouter(); const { toast } = useToast();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<SubscriptionFormValues>({ resolver: zodResolver(subscriptionSchema), defaultValues: initial ? { ...empty, ...initial, price: Number(initial.price), tax_amount: Number(initial.tax_amount), start_date: toDate(initial.start_date), last_payment_date: toDate(initial.last_payment_date), next_renewal_date: toDate(initial.next_renewal_date), end_date: toDate(initial.end_date), payment_method: initial.payment_method || '', description: initial.description || '', website_url: initial.website_url || '', account_username: initial.account_username || '', payment_notes: initial.payment_notes || '', notes: initial.notes || '' } as SubscriptionFormValues : { ...empty, category_id: defaultCategoryId || '' } });
@@ -33,10 +33,10 @@ export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Sub
     ['description','website_url','account_username','payment_method','payment_notes','notes','start_date','last_payment_date','next_renewal_date','end_date'].forEach((k) => { if (!payload[k]) payload[k] = null; });
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
-      if (initial) { await subscriptionService.update(initial.id, payload); toast({ title: 'Subscription updated' }); router.push(`/dashboard/subscriptions/${initial.id}`); }
-      else { const created = await subscriptionService.create(payload); toast({ title: 'Subscription created' }); router.push(`/dashboard/subscriptions/${created.id}`); }
+      if (initial) { await subscriptionService.update(initial.id, payload); toast.success('Subscription updated'); router.push(`/dashboard/subscriptions/${initial.id}`); }
+      else { const created = await subscriptionService.create(payload); toast.success('Subscription created'); router.push(`/dashboard/subscriptions/${created.id}`); }
       router.refresh();
-    } catch (e: any) { toast({ title: e.message || 'Failed to save subscription', variant: 'error' }); }
+    } catch (e: any) { toast.error(e.message || 'Failed to save subscription'); }
     finally { setSubmitting(false); }
   };
   const section = (title: string, children: React.ReactNode) => <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent><div className="grid gap-4 sm:grid-cols-2">{children}</div></CardContent></Card>;
