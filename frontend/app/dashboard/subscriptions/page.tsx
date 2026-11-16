@@ -1,7 +1,7 @@
 'use client';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,15 @@ function Inner() {
   const [f, setF] = useState({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v, page: k === 'page' ? v : '1' }));
   const sp = useSearchParams();
+  const router = useRouter();
   useEffect(() => { const q = sp.get('q'); if (q !== null) setF((p) => (p.search === q ? p : { ...p, search: q, page: '1' })); }, [sp]);
+  useEffect(() => {
+    const open = sp.get('open');
+    if (!open) return;
+    setDrawer({ id: open, mode: sp.get('mode') === 'edit' ? 'edit' : 'view' });
+    const q = sp.get('q');
+    router.replace(q ? `/dashboard/subscriptions?q=${encodeURIComponent(q)}` : '/dashboard/subscriptions', { scroll: false });
+  }, [sp, router]);
   const load = useCallback(() => { setLoading(true); const params: Record<string, string> = {}; Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; }); subscriptionService.list(params).then((r) => { setItems(r.items); setTotal(r.total); setTotalPages(r.totalPages); }).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   useEffect(() => { categoryService.list().then(setCategories).catch(() => {}); }, []);

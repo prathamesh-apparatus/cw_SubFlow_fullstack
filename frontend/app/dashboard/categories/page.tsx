@@ -49,6 +49,7 @@ export default function CategoriesPage() {
         <Select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-full sm:w-48"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="created_desc">Newest first</option><option value="expense_desc">Highest expense</option></Select>
       </div>
       {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : (
+        <>
         <Card className="overflow-hidden"><CardContent className="p-0">
           <div className="w-full overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-[13px]">
@@ -91,8 +92,9 @@ export default function CategoriesPage() {
             </table>
           </div>
           <p className="border-t px-4 py-2.5 text-[11px] text-muted-foreground">Showing {from}–{to} of {items.length} categories</p>
-          {totalPages > 1 && <div className="px-4 pb-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div>}
-        </CardContent></Card>)}
+        </CardContent></Card>
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} alwaysShow />
+        </>)}
       <Dialog open={dialog} onClose={() => setDialog(false)} title={editing ? 'Edit Category' : 'Create Category'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div><Label>Category Name *</Label><Input {...register('name')} placeholder="Development Team" className="mt-1.5" />{errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}</div>

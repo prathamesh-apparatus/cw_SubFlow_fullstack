@@ -30,7 +30,7 @@ function RenewalGroup({ title, items, dot }: { title: string; items: Subscriptio
             {pageItems.map((s) => (
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 text-[13px]">
                 <div>
-                  <Link href={`/dashboard/subscriptions/${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>
+                  <Link href={`/dashboard/subscriptions?open=${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>
                   <p className="text-xs text-muted-foreground">{s.category_name} · {s.account_email}</p>
                 </div>
                 <div className="flex items-center gap-3">

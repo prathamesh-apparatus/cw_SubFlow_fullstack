@@ -53,7 +53,7 @@ export default function NotificationsPage() {
       setUnread((u) => Math.max(0, u - 1));
       notificationsService.markRead(n.id).catch(() => {});
     }
-    if (n.subscription_id) router.push(`/dashboard/subscriptions/${n.subscription_id}`);
+    if (n.subscription_id) router.push(`/dashboard/subscriptions?open=${n.subscription_id}`);
   };
 
   const markAll = async () => {

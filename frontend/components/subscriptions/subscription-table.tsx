@@ -25,7 +25,7 @@ export function SubscriptionTable({ items, onDelete, onView, onEdit }: { items: 
               <td className={tdClass}>
                 <div className="flex items-center gap-2.5">
                   <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span>
-                  {onView ? <button onClick={() => onView(s)} className="font-medium text-foreground hover:underline">{s.name}</button> : <Link href={`/dashboard/subscriptions/${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>}
+                  {onView ? <button onClick={() => onView(s)} className="font-medium text-foreground hover:underline">{s.name}</button> : <Link href={`/dashboard/subscriptions?open=${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>}
                 </div>
               </td>
               <td className={tdClass}>{s.category_name || '—'}</td>
@@ -38,7 +38,7 @@ export function SubscriptionTable({ items, onDelete, onView, onEdit }: { items: 
               <td className={tdClass}><Badge>{s.status}</Badge></td>
               <td className={tdClass}>
                 <div className="flex items-center justify-end gap-1">
-                  {onView ? <button onClick={() => onView(s)} className={iconBtn} aria-label={`View ${s.name}`}><Eye className="h-4 w-4" /></button> : <Link href={`/dashboard/subscriptions/${s.id}`} className={iconBtn} aria-label={`View ${s.name}`}><Eye className="h-4 w-4" /></Link>}
+                  {onView ? <button onClick={() => onView(s)} className={iconBtn} aria-label={`View ${s.name}`}><Eye className="h-4 w-4" /></button> : <Link href={`/dashboard/subscriptions?open=${s.id}`} className={iconBtn} aria-label={`View ${s.name}`}><Eye className="h-4 w-4" /></Link>}
                   {onEdit ? <button onClick={() => onEdit(s)} className={iconBtn} aria-label={`Edit ${s.name}`}><Pencil className="h-4 w-4" /></button> : <Link href={`/dashboard/subscriptions/${s.id}/edit`} className={iconBtn} aria-label={`Edit ${s.name}`}><Pencil className="h-4 w-4" /></Link>}
                   <button onClick={() => onDelete(s)} className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50" aria-label={`Delete ${s.name}`}><Trash2 className="h-4 w-4" /></button>
                 </div>

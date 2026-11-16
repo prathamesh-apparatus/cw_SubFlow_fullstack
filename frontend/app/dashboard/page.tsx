@@ -102,7 +102,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>{renewalList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No renewals in the next {tab} days.</p> : <div className="divide-y divide-border/70">{renewalList.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><CreditCard className="h-4 w-4" /></span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name}</p></div><div className="text-right"><p className="font-semibold text-foreground">{formatCurrency(s.total_amount, s.currency)}</p><p className="text-xs text-muted-foreground">{formatDate(s.next_renewal_date)}</p></div></div>)}</div>}</CardContent>
+          <CardContent>{renewalList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No renewals in the next {tab} days.</p> : <div className="divide-y divide-border/70">{renewalList.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><CreditCard className="h-4 w-4" /></span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions?open=${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name}</p></div><div className="text-right"><p className="font-semibold text-foreground">{formatCurrency(s.total_amount, s.currency)}</p><p className="text-xs text-muted-foreground">{formatDate(s.next_renewal_date)}</p></div></div>)}</div>}</CardContent>
         </Card>
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3">
                           <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span>
                           <div className="min-w-0">
-                            <Link href={`/dashboard/subscriptions/${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>
+                            <Link href={`/dashboard/subscriptions?open=${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>
                             <p className="truncate text-[11px] text-muted-foreground">{s.account_email}</p>
                           </div>
                         </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,7 @@ export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 10;
 export default function CategoryDetailsPage() {
   const params = useParams(); const id = String(params.id);
+  const router = useRouter();
   const [cat, setCat] = useState<Category | null>(null); const [subs, setSubs] = useState<Subscription[]>([]); const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Subscription | null>(null);
   const [page, setPage] = useState(1);
@@ -37,7 +38,7 @@ export default function CategoryDetailsPage() {
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[['Total Subscriptions', subs.length], ['Active Subscriptions', active.length], ['Monthly Expenses', formatCurrency(monthly)], ['Yearly Expenses', formatCurrency(monthly * 12)]].map(([l, v]) => <Card key={String(l)}><CardContent className="pt-5"><p className="text-xs text-muted-foreground">{l}</p><p className="mt-1 text-xl font-medium">{v}</p></CardContent></Card>)}
       </div>
-      <Card className="overflow-hidden"><CardContent className="p-0"><SubscriptionTable items={pagedSubs} onDelete={setDeleting} /></CardContent></Card>
+      <Card className="overflow-hidden"><CardContent className="p-0"><SubscriptionTable items={pagedSubs} onDelete={setDeleting} onView={(s) => router.push(`/dashboard/subscriptions?open=${s.id}`)} onEdit={(s) => router.push(`/dashboard/subscriptions?open=${s.id}&mode=edit`)} /></CardContent></Card>
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} title="Delete subscription?" description={`Delete "${deleting?.name}" permanently?`} />
     </div>

@@ -143,7 +143,7 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
                 {subs.length === 0 ? (
                   <p className="px-4 py-4 text-[13px] text-muted-foreground">No subscriptions in this category yet.</p>
                 ) : subs.map((s) => (
-                  <button key={s.id} onClick={() => { onClose(); router.push(`/dashboard/subscriptions/${s.id}`); }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-accent/40">
+                  <button key={s.id} onClick={() => { onClose(); router.push(`/dashboard/subscriptions?open=${s.id}`); }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-accent/40">
                     <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-medium', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-medium text-foreground">{s.name}</span>
