@@ -1,7 +1,7 @@
 'use client';
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
-const COLORS = ['hsl(var(--chart-1))','hsl(var(--chart-2))','hsl(var(--chart-3))','hsl(var(--chart-4))','hsl(var(--chart-5))','hsl(var(--muted-foreground))','hsl(var(--chart-3))','hsl(var(--chart-2))'];
+const COLORS = ['#059669', '#2563EB', '#D97706', '#7C3AED', '#E11D48', '#0891B2', '#65A30D', '#DB2777', '#475569', '#EA580C'];
 const tooltipStyle = { borderRadius: 14, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', boxShadow: '0 12px 32px -12px rgba(28,25,23,0.18)', fontSize: 12, padding: '8px 12px' } as const;
 const tickStyle = { fontSize: 11, fill: 'hsl(var(--muted-foreground))' };
 export function ExpensesChart({ data }: { data: { label: string; total: number }[] }) {
