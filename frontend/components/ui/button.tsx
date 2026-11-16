@@ -10,6 +10,6 @@ const styles: Record<Variant, string> = {
 };
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> { variant?: Variant; size?: 'sm' | 'default' | 'lg'; }
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant = 'default', size = 'default', ...props }, ref) => (
-  <button ref={ref} className={cn('inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition disabled:opacity-50 disabled:pointer-events-none', size === 'sm' ? 'h-9 px-4 text-xs' : size === 'lg' ? 'h-12 px-7 text-base' : 'h-10 px-5 text-sm', styles[variant], className)} {...props} />
+  <button ref={ref} className={cn('inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition disabled:opacity-50 disabled:pointer-events-none', size === 'sm' ? 'h-8 px-3.5 text-xs' : size === 'lg' ? 'h-10 px-6 text-sm' : 'h-9 px-4 text-sm', styles[variant], className)} {...props} />
 ));
 Button.displayName = 'Button';

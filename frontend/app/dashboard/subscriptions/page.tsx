@@ -27,7 +27,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><h2 className="text-3xl font-bold tracking-tight text-foreground">All Subscriptions</h2><p className="mt-1 text-sm text-muted-foreground">Every plan across every team, in one place.</p></div>
+        <div><h2 className="text-xl font-semibold tracking-tight text-foreground">All Subscriptions</h2><p className="mt-1 text-sm text-muted-foreground">Every plan across every team, in one place.</p></div>
         <Link href="/dashboard/subscriptions/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Subscription</Button></Link>
       </div>
       <div className="space-y-3 rounded-[1.25rem] border bg-card p-3 shadow-sm">

@@ -34,20 +34,20 @@ export default function DashboardPage() {
   ];
   const renewalList: Subscription[] = renewals ? (tab === 7 ? renewals.within7 : tab === 15 ? renewals.within15 : renewals.within30) : [];
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Welcome back, Admin</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back, Admin</h2>
         <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">Here&apos;s what&apos;s happening across your subscriptions today.</p>
       </div>
 
       <Card>
-        <CardHeader className="pb-1"><CardTitle className="text-lg">Overview</CardTitle></CardHeader>
+        <CardHeader className="pb-1"><CardTitle>Overview</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
             {overviewStats.map((s, i) => (
               <div key={s.label} className={cn(i > 0 && 'lg:border-l lg:pl-8')}>
                 <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                <p className="mt-2 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">{s.value}</p>
+                <p className="mt-2 text-[28px] font-semibold leading-none tracking-tight text-foreground">{s.value}</p>
                 <p className="mt-2 text-xs text-muted-foreground">{s.sub}</p>
               </div>
             ))}
@@ -63,7 +63,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-muted-foreground">{c.label}</p>
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"><Icon className="h-4 w-4" /></span>
               </div>
-              <p className="mt-3 text-3xl font-bold tracking-tight text-foreground">{c.value}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{c.value}</p>
               <p className="mt-1.5 text-xs text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>
@@ -72,11 +72,11 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-lg">Monthly Expenses</CardTitle><p className="text-sm text-muted-foreground">Last 12 months, from payment history</p></CardHeader>
+          <CardHeader><CardTitle>Monthly Expenses</CardTitle><p className="text-sm text-muted-foreground">Last 12 months, from payment history</p></CardHeader>
           <CardContent><ExpensesChart data={expenses} /></CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-lg">Category-wise Expenses</CardTitle><p className="text-sm text-muted-foreground">Where the money goes, by team</p></CardHeader>
+          <CardHeader><CardTitle>Category-wise Expenses</CardTitle><p className="text-sm text-muted-foreground">Where the money goes, by team</p></CardHeader>
           <CardContent><CategoryDonut data={breakdown} /></CardContent>
         </Card>
       </div>
@@ -85,17 +85,17 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle className="text-lg">Upcoming Renewals</CardTitle>
+              <CardTitle>Upcoming Renewals</CardTitle>
               <div className="inline-flex rounded-full bg-secondary p-1">
                 {([7, 15, 30] as const).map((d) => <button key={d} onClick={() => setTab(d)} className={cn('rounded-full px-3.5 py-1.5 text-xs font-medium transition', tab === d ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>{d} days</button>)}
               </div>
             </div>
           </CardHeader>
-          <CardContent>{renewalList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No renewals in the next {tab} days.</p> : <div className="divide-y divide-border/70">{renewalList.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><CreditCard className="h-5 w-5" /></span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name}</p></div><div className="text-right"><p className="font-semibold text-foreground">{formatCurrency(s.total_amount, s.currency)}</p><p className="text-xs text-muted-foreground">{formatDate(s.next_renewal_date)}</p></div></div>)}</div>}</CardContent>
+          <CardContent>{renewalList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No renewals in the next {tab} days.</p> : <div className="divide-y divide-border/70">{renewalList.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><CreditCard className="h-4 w-4" /></span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name}</p></div><div className="text-right"><p className="font-semibold text-foreground">{formatCurrency(s.total_amount, s.currency)}</p><p className="text-xs text-muted-foreground">{formatDate(s.next_renewal_date)}</p></div></div>)}</div>}</CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-lg">Recently Added</CardTitle></CardHeader>
-          <CardContent>{recent.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No subscriptions yet. <Link href="/dashboard/subscriptions/new" className="font-medium text-brand underline">Add your first one</Link></p> : <div className="divide-y divide-border/70">{recent.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-base font-bold text-foreground">{s.name.charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name} · {formatDate(s.created_at)}</p></div><Badge>{s.status}</Badge></div>)}</div>}</CardContent>
+          <CardHeader><CardTitle>Recently Added</CardTitle></CardHeader>
+          <CardContent>{recent.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No subscriptions yet. <Link href="/dashboard/subscriptions/new" className="font-medium text-emerald-700 underline">Add your first one</Link></p> : <div className="divide-y divide-border/70">{recent.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-sm font-semibold text-foreground">{s.name.charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name} · {formatDate(s.created_at)}</p></div><Badge>{s.status}</Badge></div>)}</div>}</CardContent>
         </Card>
       </div>
     </div>

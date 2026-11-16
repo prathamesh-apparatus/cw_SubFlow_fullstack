@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html { font-size: 14px; }
+}
+
 /*
   ============================================================
   SubFlow Design Tokens — SINGLE SOURCE OF TRUTH FOR STYLING

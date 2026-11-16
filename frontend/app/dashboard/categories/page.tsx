@@ -31,7 +31,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><h2 className="text-3xl font-bold tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
+        <div><h2 className="text-xl font-semibold tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
         <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add Category</Button>
       </div>
       <div className="flex flex-col gap-3 rounded-[1.25rem] border bg-card p-3 shadow-sm sm:flex-row sm:items-center">
@@ -43,8 +43,8 @@ export default function CategoriesPage() {
           {items.map((c) => <Card key={c.id} className="transition hover:shadow-[0_20px_44px_-16px_rgba(28,25,23,0.18)]"><CardContent className="pt-5">
             <div className="flex items-start justify-between"><Link href={`/dashboard/categories/${c.id}`} className="text-lg font-semibold hover:underline">{c.name}</Link><div className="flex gap-1"><button onClick={() => openEdit(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card shadow-sm transition hover:bg-accent" aria-label="Edit"><Pencil className="h-4 w-4" /></button><button onClick={() => setDeleting(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-destructive shadow-sm transition hover:bg-accent" aria-label="Delete"><Trash2 className="h-4 w-4" /></button></div></div>
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.description || 'No description'}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-2xl bg-secondary p-2.5"><p className="font-bold">{c.subscription_count ?? 0}</p><p className="text-[11px] text-muted-foreground">Subscriptions</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-bold">{formatCurrency(c.total_monthly_expense || 0)}</p><p className="text-[11px] text-muted-foreground">Monthly</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-bold text-xs pt-1">{formatDate(c.created_at)}</p><p className="text-[11px] text-muted-foreground">Created</p></div></div>
-            <Link href={`/dashboard/categories/${c.id}`} className="mt-4 flex items-center gap-1 text-sm font-semibold text-brand hover:underline"><Eye className="h-4 w-4" /> View subscriptions</Link>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold">{c.subscription_count ?? 0}</p><p className="text-[11px] text-muted-foreground">Subscriptions</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold">{formatCurrency(c.total_monthly_expense || 0)}</p><p className="text-[11px] text-muted-foreground">Monthly</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold text-xs pt-1">{formatDate(c.created_at)}</p><p className="text-[11px] text-muted-foreground">Created</p></div></div>
+            <Link href={`/dashboard/categories/${c.id}`} className="mt-4 flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline"><Eye className="h-4 w-4" /> View subscriptions</Link>
           </CardContent></Card>)}
         </div>)}
       <Dialog open={dialog} onClose={() => setDialog(false)} title={editing ? 'Edit Category' : 'Create Category'}>
