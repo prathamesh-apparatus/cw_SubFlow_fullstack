@@ -1,6 +1,5 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Search, Pencil, Trash2, FolderOpen, Eye } from 'lucide-react';
@@ -10,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog';
+import { CategoryDrawer } from '@/components/categories/category-drawer';
 import { categoryService } from '@/services/category.service';
 import { categorySchema, CategoryFormValues } from '@/lib/validations';
 import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
@@ -21,6 +21,7 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState(''); const [sort, setSort] = useState('name_asc');
   const [dialog, setDialog] = useState(false); const [editing, setEditing] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null); const [delLoading, setDelLoading] = useState(false);
+  const [viewing, setViewing] = useState<string | null>(null);
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CategoryFormValues>({ resolver: zodResolver(categorySchema) });
   const load = useCallback(() => { setLoading(true); categoryService.list(search, sort).then(setItems).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [search, sort]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
@@ -60,7 +61,7 @@ export default function CategoriesPage() {
                       <div className="flex items-center gap-3">
                         <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', pastelFor(c.name))}><FolderOpen className="h-4 w-4" /></span>
                         <div className="min-w-0">
-                          <Link href={`/dashboard/categories/${c.id}`} className="text-[13px] font-medium text-foreground hover:underline">{c.name}</Link>
+                          <button onClick={() => setViewing(c.id)} className="text-[13px] font-medium text-foreground hover:underline">{c.name}</button>
                           <p className="max-w-[280px] truncate text-[11px] text-muted-foreground">{c.description || 'No description'}</p>
                         </div>
                       </div>
@@ -70,7 +71,7 @@ export default function CategoriesPage() {
                     <td className="whitespace-nowrap px-5 py-3 align-middle">{formatDate(c.created_at)}</td>
                     <td className="whitespace-nowrap px-5 py-3 align-middle">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/dashboard/categories/${c.id}`} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label={`View ${c.name}`}><Eye className="h-4 w-4" /></Link>
+                        <button onClick={() => setViewing(c.id)} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label={`View ${c.name}`}><Eye className="h-4 w-4" /></button>
                         <button onClick={() => openEdit(c)} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label={`Edit ${c.name}`}><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => setDeleting(c)} className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50" aria-label={`Delete ${c.name}`}><Trash2 className="h-4 w-4" /></button>
                       </div>
@@ -90,6 +91,7 @@ export default function CategoriesPage() {
         </form>
       </Dialog>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} loading={delLoading} title="Delete category?" description={`Delete "${deleting?.name}"? Categories with subscriptions cannot be deleted — you will get an error and must reassign or delete those subscriptions first.`} />
+      {viewing && <CategoryDrawer categoryId={viewing} onClose={() => setViewing(null)} onChanged={load} />}
     </div>
   );
 }

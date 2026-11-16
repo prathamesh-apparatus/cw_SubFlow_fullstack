@@ -55,6 +55,13 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
     return () => window.removeEventListener('keydown', onKey);
   }, [subscriptionId, onClose]);
 
+  useEffect(() => {
+    if (!subscriptionId) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [subscriptionId]);
+
   if (!subscriptionId) return null;
 
   const onDelete = async () => {
@@ -70,8 +77,8 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
   return (
     <>
       <div className="fixed inset-0 z-50 bg-foreground/40" onClick={onClose} />
-      <aside className={cn('fixed right-0 top-0 z-50 flex h-full w-full flex-col bg-background shadow-2xl', mode === 'edit' ? 'max-w-[560px]' : 'max-w-[440px]')}>
-        <div className="flex items-center justify-between px-5 pt-5">
+      <aside className={cn('fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col bg-background shadow-2xl', mode === 'edit' ? 'max-w-[560px]' : 'max-w-[440px]')}>
+        <div className="flex shrink-0 items-center justify-between px-5 pt-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{mode === 'edit' ? 'Edit Subscription' : 'Subscription Details'}</p>
           <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
@@ -79,12 +86,12 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
         {loading || !sub ? (
           <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading…</p>
         ) : mode === 'edit' ? (
-          <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex-1 overflow-y-auto px-5 py-5 [scrollbar-width:thin]">
             <SubscriptionForm initial={sub} onSaved={() => { onChanged(); setMode('view'); fetchSub(sub.id, true); }} onCancel={() => setMode('view')} />
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 [scrollbar-width:thin]">
               <div className="flex items-start gap-3.5">
                 <span className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-medium', pastelFor(sub.name))}>{sub.name.charAt(0).toUpperCase()}</span>
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -147,9 +154,9 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
                 </Section>
               )}
             </div>
-            <div className="flex gap-2 border-t bg-background/80 p-3 backdrop-blur">
-              <Button className="flex-1" onClick={() => setMode('edit')}><Pencil className="h-4 w-4" /> Edit</Button>
-              <Button variant="outline" onClick={() => setConfirm(true)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /> Delete</Button>
+            <div className="flex shrink-0 gap-2 border-t bg-card px-5 py-4">
+              <Button className="h-11 flex-1 text-sm font-medium" onClick={() => setMode('edit')}><Pencil className="h-4 w-4" /> Edit</Button>
+              <Button variant="outline" onClick={() => setConfirm(true)} className="h-11 border-red-200 px-6 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /> Delete</Button>
             </div>
           </>
         )}
