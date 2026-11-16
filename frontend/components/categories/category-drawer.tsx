@@ -1,12 +1,12 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Activity, CalendarClock, CircleDollarSign, FolderOpen, Layers, Pencil, Trash2, Wallet, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SubscriptionDrawer } from '@/components/subscriptions/subscription-drawer';
 import { categoryService } from '@/services/category.service';
 import { cn, formatCurrency, formatDate, monthlyAmount, pastelFor } from '@/lib/utils';
 import toast from 'react-hot-toast';
@@ -33,7 +33,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId: string; onClose: () => void; onChanged: () => void }) {
-  const router = useRouter();
   const [cat, setCat] = useState<Category | null>(null);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +42,7 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [delLoading, setDelLoading] = useState(false);
+  const [activeSub, setActiveSub] = useState<{ id: string; mode: 'view' | 'edit' } | null>(null);
 
   const fetchCat = useCallback((silent = false) => {
     if (!silent) setLoading(true);
@@ -55,10 +55,12 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
   useEffect(() => { fetchCat(); }, [fetchCat]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    // While the nested subscription drawer is open, Escape must close only that
+    // drawer (its own handler) — never the category drawer underneath.
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !activeSub) onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, activeSub]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -143,7 +145,7 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
                 {subs.length === 0 ? (
                   <p className="px-4 py-4 text-[13px] text-muted-foreground">No subscriptions in this category yet.</p>
                 ) : subs.map((s) => (
-                  <button key={s.id} onClick={() => { onClose(); router.push(`/dashboard/subscriptions/${s.id}`); }} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-accent/40">
+                  <button key={s.id} onClick={() => setActiveSub({ id: s.id, mode: 'view' })} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-accent/40">
                     <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-medium', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-medium text-foreground">{s.name}</span>
@@ -168,6 +170,16 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
         )}
       </aside>
       <ConfirmDialog open={confirm} onClose={() => setConfirm(false)} onConfirm={onDelete} loading={delLoading} title="Delete category?" description={`Delete "${cat?.name}" permanently? This cannot be undone.`} />
+      {/* Nested subscription drawer (same view/edit/delete as All Subscriptions).
+          Rendered last so, at equal z-index, it paints above the category panel.
+          Its scroll-lock effect saves/restores the previous overflow value, so
+          closing it keeps the category drawer's 'hidden' lock in place. */}
+      <SubscriptionDrawer
+        subscriptionId={activeSub?.id ?? null}
+        initialMode={activeSub?.mode ?? 'view'}
+        onClose={() => setActiveSub(null)}
+        onChanged={() => { fetchCat(true); onChanged(); }}
+      />
     </>
   );
 }
