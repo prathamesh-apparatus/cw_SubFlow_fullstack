@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
-@Module({ controllers: [DashboardController], providers: [DashboardService] })
+import { AuthModule } from '../auth/auth.module';
+@Module({ imports: [AuthModule], controllers: [DashboardController], providers: [DashboardService] })
 export class DashboardModule {}
