@@ -18,8 +18,8 @@ const textareaClass = 'flex w-full rounded-xl border border-input bg-card px-3.5
 function Row({ icon: Icon, label, value }: { icon: any; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-2.5">
-      <span className="flex items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5 shrink-0" />{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
+      <span className="flex shrink-0 items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5 shrink-0" />{label}</span>
+      <span className="min-w-0 break-all text-right font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -95,7 +95,7 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
   return (
     <>
       <div className="fixed inset-0 z-50 bg-foreground/40" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex h-dvh w-full max-w-[480px] flex-col bg-background shadow-2xl">
+      <aside className="fixed inset-y-0 right-0 z-50 flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-2xl">
         <div className="flex shrink-0 items-center justify-between px-5 pt-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{mode === 'edit' ? 'Edit Category' : 'Category Details'}</p>
           <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition hover:text-foreground"><X className="h-4 w-4" /></button>
@@ -114,9 +114,9 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
                 <Label>Description</Label>
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this team uses…" rows={3} className={cn(textareaClass, 'mt-1.5 resize-none')} />
               </div>
-              <div className="flex gap-2 pt-1">
-                <Button className="h-10 flex-1 text-sm" onClick={onSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-                <Button variant="ghost" className="h-10 px-5 text-sm" onClick={() => setMode('view')} disabled={saving}>Cancel</Button>
+              <div className="flex w-full gap-3 pt-1">
+                <Button className="h-10 min-w-0 flex-1 text-sm" onClick={onSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+                <Button variant="ghost" className="h-10 shrink-0 px-5 text-sm" onClick={() => setMode('view')} disabled={saving}>Cancel</Button>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
                 <span className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', pastelFor(cat.name))}><FolderOpen className="h-6 w-6" /></span>
                 <div className="min-w-0 flex-1 pt-0.5">
                   <p className="truncate text-base font-medium text-foreground">{cat.name}</p>
-                  <p className="text-xs text-muted-foreground">{cat.description || 'No description'}</p>
+                  <p className="break-words text-xs text-muted-foreground">{cat.description || 'No description'}</p>
                 </div>
               </div>
 
@@ -158,9 +158,11 @@ export function CategoryDrawer({ categoryId, onClose, onChanged }: { categoryId:
                 ))}
               </Section>
             </div>
-            <div className="flex shrink-0 gap-2 border-t bg-card px-5 py-4">
-              <Button className="h-11 flex-1 text-sm font-medium" onClick={openEdit}><Pencil className="h-4 w-4" /> Edit</Button>
-              <Button variant="outline" onClick={() => setConfirm(true)} className="h-11 border-red-200 px-6 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /> Delete</Button>
+            <div className="shrink-0 border-t bg-card px-5 py-4">
+              <div className="flex w-full items-center gap-3">
+                <Button className="h-11 min-w-0 flex-1 text-sm font-medium" onClick={openEdit}><Pencil className="h-4 w-4 shrink-0" /> Edit</Button>
+                <Button variant="outline" onClick={() => setConfirm(true)} className="h-11 w-[128px] shrink-0 whitespace-nowrap border-red-200 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4 shrink-0" /> Delete</Button>
+              </div>
             </div>
           </>
         )}

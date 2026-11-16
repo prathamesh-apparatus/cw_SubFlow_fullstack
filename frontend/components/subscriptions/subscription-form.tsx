@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { subscriptionSchema, SubscriptionFormValues } from '@/lib/validations';
+import { CURRENCIES, currencyLabel } from '@/lib/currencies';
 import { categoryService } from '@/services/category.service';
 import { subscriptionService } from '@/services/subscription.service';
 import toast from 'react-hot-toast';
@@ -22,7 +23,7 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
   const [submitting, setSubmitting] = useState(false);
   const form = useForm<SubscriptionFormValues>({ resolver: zodResolver(subscriptionSchema), defaultValues: initial ? { ...empty, ...initial, price: Number(initial.price), tax_amount: Number(initial.tax_amount), start_date: toDate(initial.start_date), last_payment_date: toDate(initial.last_payment_date), next_renewal_date: toDate(initial.next_renewal_date), end_date: toDate(initial.end_date), payment_method: initial.payment_method || '', description: initial.description || '', website_url: initial.website_url || '', account_username: initial.account_username || '', payment_notes: initial.payment_notes || '', notes: initial.notes || '' } as SubscriptionFormValues : { ...empty, category_id: defaultCategoryId || '' } });
   const { register, handleSubmit, watch, formState: { errors } } = form;
-  const price = watch('price'); const tax = watch('tax_amount'); const cycle = watch('billing_cycle');
+  const price = watch('price'); const tax = watch('tax_amount'); const cycle = watch('billing_cycle'); const currency = watch('currency');
   const total = (Number(price) || 0) + (Number(tax) || 0);
   useEffect(() => { categoryService.list().then(setCategories).catch(() => {}); }, []);
   const err = (m?: string) => m ? <p className="mt-1 text-xs text-destructive">{m}</p> : null;
@@ -52,7 +53,7 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
       </>)}
       {section('B. Pricing Details', <>
         {field('Price *', <Input type="number" step="0.01" min="0" {...register('price')} />, errors.price?.message)}
-        {field('Currency', <Input {...register('currency')} />)}
+        {field('Currency', <select {...register('currency')} className="flex h-11 w-full rounded-xl border border-input bg-card px-3.5 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-foreground/30 focus:ring-4 focus:ring-foreground/5 disabled:opacity-50">{currency && !CURRENCIES.some((c) => c.code === currency) && <option value={currency}>{currency}</option>}{CURRENCIES.map((c) => <option key={c.code} value={c.code}>{currencyLabel(c)}</option>)}</select>)}
         {field('Billing Cycle', <Select {...register('billing_cycle')}><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="half_yearly">Half-Yearly</option><option value="yearly">Yearly</option><option value="custom">Custom</option></Select>)}
         {cycle === 'custom' ? field('Custom Billing Interval (days) *', <Input type="number" min="1" {...register('custom_billing_days')} />, errors.custom_billing_days?.message) : null}
         {field('Tax Amount', <Input type="number" step="0.01" min="0" {...register('tax_amount')} />, errors.tax_amount?.message)}

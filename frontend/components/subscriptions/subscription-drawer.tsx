@@ -15,8 +15,8 @@ const cycleLabel: Record<string, string> = { monthly: 'Monthly', quarterly: 'Qua
 function Row({ icon: Icon, label, value, valueClass }: { icon: any; label: string; value: React.ReactNode; valueClass?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-2.5">
-      <span className="flex items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5 shrink-0" />{label}</span>
-      <span className={cn('text-right font-medium text-foreground', valueClass)}>{value}</span>
+      <span className="flex shrink-0 items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5 shrink-0" />{label}</span>
+      <span className={cn('min-w-0 break-all text-right font-medium text-foreground', valueClass)}>{value}</span>
     </div>
   );
 }
@@ -77,7 +77,7 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
   return (
     <>
       <div className="fixed inset-0 z-50 bg-foreground/40" onClick={onClose} />
-      <aside className={cn('fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col bg-background shadow-2xl', mode === 'edit' ? 'max-w-[560px]' : 'max-w-[440px]')}>
+      <aside className={cn('fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col overflow-hidden bg-background shadow-2xl', mode === 'edit' ? 'max-w-[560px]' : 'max-w-[440px]')}>
         <div className="flex shrink-0 items-center justify-between px-5 pt-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{mode === 'edit' ? 'Edit Subscription' : 'Subscription Details'}</p>
           <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition hover:text-foreground"><X className="h-4 w-4" /></button>
@@ -142,21 +142,23 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
                   {sub.description && (
                     <div className="px-4 py-3">
                       <p className="text-xs text-muted-foreground">Description</p>
-                      <p className="mt-0.5 text-[13px] text-foreground">{sub.description}</p>
+                      <p className="mt-0.5 break-words text-[13px] text-foreground">{sub.description}</p>
                     </div>
                   )}
                   {sub.notes && (
                     <div className="px-4 py-3">
                       <p className="text-xs text-muted-foreground">Notes</p>
-                      <p className="mt-0.5 text-[13px] text-foreground">{sub.notes}</p>
+                      <p className="mt-0.5 break-words text-[13px] text-foreground">{sub.notes}</p>
                     </div>
                   )}
                 </Section>
               )}
             </div>
-            <div className="flex shrink-0 gap-2 border-t bg-card px-5 py-4">
-              <Button className="h-11 flex-1 text-sm font-medium" onClick={() => setMode('edit')}><Pencil className="h-4 w-4" /> Edit</Button>
-              <Button variant="outline" onClick={() => setConfirm(true)} className="h-11 border-red-200 px-6 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4" /> Delete</Button>
+            <div className="shrink-0 border-t bg-card px-5 py-4">
+              <div className="flex w-full items-center gap-3">
+                <Button className="h-11 min-w-0 flex-1 text-sm font-medium" onClick={() => setMode('edit')}><Pencil className="h-4 w-4 shrink-0" /> Edit</Button>
+                <Button variant="outline" onClick={() => setConfirm(true)} className="h-11 w-[128px] shrink-0 whitespace-nowrap border-red-200 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"><Trash2 className="h-4 w-4 shrink-0" /> Delete</Button>
+              </div>
             </div>
           </>
         )}
