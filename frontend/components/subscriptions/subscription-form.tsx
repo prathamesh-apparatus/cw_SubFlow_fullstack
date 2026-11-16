@@ -15,13 +15,13 @@ import { subscriptionService } from '@/services/subscription.service';
 import toast from 'react-hot-toast';
 import type { Category, Subscription } from '@/types';
 
-const empty: SubscriptionFormValues = { name: '', category_id: '', description: '', website_url: '', account_email: '', account_username: '', price: 0, currency: 'INR', billing_cycle: 'monthly', custom_billing_days: null, tax_amount: 0, payment_method: '', auto_pay_enabled: false, payment_status: 'pending', payment_notes: '', start_date: '', last_payment_date: '', next_renewal_date: '', end_date: '', renewal_reminder: true, reminder_days_before: 7, status: 'active', auto_renewal_enabled: false, notes: '' };
+const empty: SubscriptionFormValues = { name: '', category_id: '', description: '', website_url: '', account_email: '', account_username: '', price: 0, currency: 'INR', billing_cycle: 'monthly', custom_billing_days: null, tax_amount: 0, payment_method: '', auto_pay_enabled: false, payment_status: 'pending', payment_notes: '', start_date: '', end_date: '', status: 'active', notes: '' };
 function toDate(v?: string | null) { return v ? String(v).slice(0, 10) : ''; }
 export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel }: { initial?: Subscription; defaultCategoryId?: string; onSaved?: (sub: Subscription) => void; onCancel?: () => void }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const form = useForm<SubscriptionFormValues>({ resolver: zodResolver(subscriptionSchema), defaultValues: initial ? { ...empty, ...initial, price: Number(initial.price), tax_amount: Number(initial.tax_amount), start_date: toDate(initial.start_date), last_payment_date: toDate(initial.last_payment_date), next_renewal_date: toDate(initial.next_renewal_date), end_date: toDate(initial.end_date), payment_method: initial.payment_method || '', description: initial.description || '', website_url: initial.website_url || '', account_username: initial.account_username || '', payment_notes: initial.payment_notes || '', notes: initial.notes || '' } as SubscriptionFormValues : { ...empty, category_id: defaultCategoryId || '' } });
+  const form = useForm<SubscriptionFormValues>({ resolver: zodResolver(subscriptionSchema), defaultValues: initial ? { ...empty, ...initial, price: Number(initial.price), tax_amount: Number(initial.tax_amount), start_date: toDate(initial.start_date), end_date: toDate(initial.end_date), payment_method: initial.payment_method || '', description: initial.description || '', website_url: initial.website_url || '', account_username: initial.account_username || '', payment_notes: initial.payment_notes || '', notes: initial.notes || '' } as SubscriptionFormValues : { ...empty, category_id: defaultCategoryId || '' } });
   const { register, handleSubmit, watch, formState: { errors } } = form;
   const price = watch('price'); const tax = watch('tax_amount'); const cycle = watch('billing_cycle'); const currency = watch('currency');
   const total = (Number(price) || 0) + (Number(tax) || 0);
@@ -31,7 +31,7 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
   const onSubmit = async (values: SubscriptionFormValues) => {
     if (submitting) return; setSubmitting(true);
     const payload: any = { ...values };
-    ['description','website_url','account_username','payment_method','payment_notes','notes','start_date','last_payment_date','next_renewal_date','end_date'].forEach((k) => { if (!payload[k]) payload[k] = null; });
+    ['description','website_url','account_username','payment_method','payment_notes','notes','start_date','end_date'].forEach((k) => { if (!payload[k]) payload[k] = null; });
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
       if (initial) { const saved = await subscriptionService.update(initial.id, payload); toast.success('Subscription updated'); if (onSaved) { onSaved(saved); return; } router.push(`/dashboard/subscriptions?open=${initial.id}`); }
@@ -67,15 +67,10 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
       </>)}
       {section('D. Renewal Information', <>
         {field('Start Date', <Input type="date" {...register('start_date')} />)}
-        {field('Last Payment Date', <Input type="date" {...register('last_payment_date')} />)}
-        {field('Next Renewal Date', <Input type="date" {...register('next_renewal_date')} />)}
         {field('End Date', <Input type="date" {...register('end_date')} />)}
-        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="reminder" {...register('renewal_reminder')} className="h-4 w-4 accent-emerald-600" /><Label htmlFor="reminder">Renewal Reminder</Label></div>
-        {field('Reminder Days Before', <Select {...register('reminder_days_before')}><option value={3}>3 Days</option><option value={7}>7 Days</option><option value={15}>15 Days</option><option value={30}>30 Days</option></Select>)}
       </>)}
       {section('E. Subscription Status', <>
         {field('Status', <Select {...register('status')}><option value="active">Active</option><option value="inactive">Inactive</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option><option value="trial">Trial</option></Select>)}
-        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autorenew" {...register('auto_renewal_enabled')} className="h-4 w-4 accent-emerald-600" /><Label htmlFor="autorenew">Auto-Renewal Enabled</Label></div>
         {field('Internal Notes', <Input {...register('notes')} placeholder="Internal notes" />)}
       </>)}
       <div className="flex gap-2"><Button type="submit" disabled={submitting}>{submitting ? 'Saving…' : initial ? 'Update Subscription' : 'Create Subscription'}</Button><Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())}>Cancel</Button></div>

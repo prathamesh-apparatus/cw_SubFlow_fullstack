@@ -26,13 +26,8 @@ export const subscriptionSchema = z.object({
   payment_status: z.enum(['paid','pending','failed']),
   payment_notes: z.string().optional().or(z.literal('')),
   start_date: z.string().optional().or(z.literal('')),
-  last_payment_date: z.string().optional().or(z.literal('')),
-  next_renewal_date: z.string().optional().or(z.literal('')),
   end_date: z.string().optional().or(z.literal('')),
-  renewal_reminder: z.boolean(),
-  reminder_days_before: z.coerce.number(),
   status: z.enum(['active','inactive','cancelled','expired','trial']),
-  auto_renewal_enabled: z.boolean(),
   notes: z.string().optional().or(z.literal('')),
 }).refine((d) => d.billing_cycle !== 'custom' || (d.custom_billing_days && d.custom_billing_days > 0), { message: 'Custom billing days required for custom cycle', path: ['custom_billing_days'] });
 export type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;

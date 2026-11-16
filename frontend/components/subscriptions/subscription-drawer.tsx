@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, Bell, CalendarCheck, CalendarClock, CalendarX, CircleDollarSign, Clock, CreditCard, ExternalLink, FolderOpen, Globe, History, Pencil, Receipt, RefreshCw, Repeat, Tag, Trash2, Wallet, X, Zap } from 'lucide-react';
+import { Activity, CalendarClock, CalendarX, CircleDollarSign, Clock, CreditCard, ExternalLink, FolderOpen, Globe, History, Pencil, Receipt, Repeat, Tag, Trash2, Wallet, X, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
@@ -109,8 +109,6 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
                 <Row icon={Activity} label="Status" value={<span className="capitalize">{sub.status}</span>} />
                 <Row icon={Wallet} label="Payment status" value={<span className="capitalize">{sub.payment_status}</span>} />
                 <Row icon={Zap} label="Auto-pay" value={sub.auto_pay_enabled ? 'Yes' : 'No'} />
-                <Row icon={RefreshCw} label="Auto-renewal" value={sub.auto_renewal_enabled ? 'Yes' : 'No'} />
-                <Row icon={Bell} label="Renewal reminder" value={sub.renewal_reminder ? `${sub.reminder_days_before} days before` : 'Off'} />
               </Section>
 
               <Section title="Pricing & billing">
@@ -124,7 +122,6 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
 
               <Section title="Dates">
                 <Row icon={CalendarClock} label="Start date" value={formatDate(sub.start_date)} />
-                <Row icon={CalendarCheck} label="Last payment date" value={formatDate(sub.last_payment_date)} />
                 <Row icon={CalendarClock} label="Next renewal date" value={formatDate(sub.next_renewal_date)} valueClass={overdue ? 'text-red-600' : undefined} />
                 <Row icon={CalendarX} label="End date" value={formatDate(sub.end_date)} />
                 <Row icon={Clock} label="Added on" value={formatDate(sub.created_at)} />
