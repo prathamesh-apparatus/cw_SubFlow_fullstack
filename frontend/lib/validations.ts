@@ -1,5 +1,13 @@
 import { z } from 'zod';
 export const loginSchema = z.object({ email: z.string().email('Enter a valid email'), password: z.string().min(1, 'Password is required') });
+export const profileEmailSchema = z.object({ email: z.string().email('Enter a valid email') });
+export type ProfileEmailValues = z.infer<typeof profileEmailSchema>;
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+  confirmPassword: z.string().min(1, 'Confirm your new password'),
+}).refine((d) => d.newPassword === d.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
 export const categorySchema = z.object({ name: z.string().min(1, 'Category name is required').max(255), description: z.string().optional().or(z.literal('')) });
 export const subscriptionSchema = z.object({
   name: z.string().min(1, 'Subscription name is required'),

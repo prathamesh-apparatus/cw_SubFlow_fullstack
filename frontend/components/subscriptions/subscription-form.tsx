@@ -16,7 +16,7 @@ import type { Category, Subscription } from '@/types';
 
 const empty: SubscriptionFormValues = { name: '', category_id: '', description: '', website_url: '', account_email: '', account_username: '', price: 0, currency: 'INR', billing_cycle: 'monthly', custom_billing_days: null, tax_amount: 0, payment_method: '', auto_pay_enabled: false, payment_status: 'pending', payment_notes: '', start_date: '', last_payment_date: '', next_renewal_date: '', end_date: '', renewal_reminder: true, reminder_days_before: 7, status: 'active', auto_renewal_enabled: false, notes: '' };
 function toDate(v?: string | null) { return v ? String(v).slice(0, 10) : ''; }
-export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Subscription; defaultCategoryId?: string }) {
+export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel }: { initial?: Subscription; defaultCategoryId?: string; onSaved?: (sub: Subscription) => void; onCancel?: () => void }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -33,8 +33,8 @@ export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Sub
     ['description','website_url','account_username','payment_method','payment_notes','notes','start_date','last_payment_date','next_renewal_date','end_date'].forEach((k) => { if (!payload[k]) payload[k] = null; });
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
-      if (initial) { await subscriptionService.update(initial.id, payload); toast.success('Subscription updated'); router.push(`/dashboard/subscriptions/${initial.id}`); }
-      else { const created = await subscriptionService.create(payload); toast.success('Subscription created'); router.push(`/dashboard/subscriptions/${created.id}`); }
+      if (initial) { const saved = await subscriptionService.update(initial.id, payload); toast.success('Subscription updated'); if (onSaved) { onSaved(saved); return; } router.push(`/dashboard/subscriptions/${initial.id}`); }
+      else { const created = await subscriptionService.create(payload); toast.success('Subscription created'); if (onSaved) { onSaved(created); return; } router.push(`/dashboard/subscriptions/${created.id}`); }
       router.refresh();
     } catch (e: any) { toast.error(e.message || 'Failed to save subscription'); }
     finally { setSubmitting(false); }
@@ -77,7 +77,7 @@ export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Sub
         <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autorenew" {...register('auto_renewal_enabled')} className="h-4 w-4 accent-emerald-600" /><Label htmlFor="autorenew">Auto-Renewal Enabled</Label></div>
         {field('Internal Notes', <Input {...register('notes')} placeholder="Internal notes" />)}
       </>)}
-      <div className="flex gap-2"><Button type="submit" disabled={submitting}>{submitting ? 'Saving…' : initial ? 'Update Subscription' : 'Create Subscription'}</Button><Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button></div>
+      <div className="flex gap-2"><Button type="submit" disabled={submitting}>{submitting ? 'Saving…' : initial ? 'Update Subscription' : 'Create Subscription'}</Button><Button type="button" variant="outline" onClick={() => (onCancel ? onCancel() : router.back())}>Cancel</Button></div>
     </form>
   );
 }

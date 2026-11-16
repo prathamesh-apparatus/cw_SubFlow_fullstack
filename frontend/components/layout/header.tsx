@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronRight, Menu, Search } from 'lucide-react';
+import { Bell, ChevronRight, Menu, Search } from 'lucide-react';
+import { notificationsService } from '@/services/notifications.service';
 const segmentLabels: Record<string, string> = {
   categories: 'Categories',
   subscriptions: 'All Subscriptions',
   renewals: 'Upcoming Renewals',
+  notifications: 'Notifications',
   settings: 'Settings',
   new: 'Add Subscription',
   edit: 'Edit',
@@ -15,6 +17,14 @@ export function Header({ email, onMenu }: { email?: string; onMenu: () => void }
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState('');
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    const load = () => { notificationsService.unreadCount().then((r) => { if (alive) setUnread(r.unread || 0); }).catch(() => {}); };
+    load();
+    const t = setInterval(load, 60000);
+    return () => { alive = false; clearInterval(t); };
+  }, [pathname]);
   const onSearch = (e: React.FormEvent) => { e.preventDefault(); router.push(`/dashboard/subscriptions?q=${encodeURIComponent(query)}`); };
   const rest = pathname.split('/').filter(Boolean).slice(1);
   const crumbs: { label: string; href: string }[] = [{ label: 'SubFlow', href: '/dashboard' }];
@@ -43,6 +53,10 @@ export function Header({ email, onMenu }: { email?: string; onMenu: () => void }
         </form>
         <div className="ml-auto flex shrink-0 items-center gap-3 sm:ml-0">
           <span className="hidden items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 md:flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Admin session</span>
+          <Link href="/dashboard/notifications" aria-label="Notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full border bg-white text-muted-foreground shadow-sm transition hover:text-foreground">
+            <Bell className="h-[18px] w-[18px]" />
+            {unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">{unread > 9 ? '9+' : unread}</span>}
+          </Link>
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-semibold text-white">{(email || 'A').charAt(0).toUpperCase()}</span>
         </div>
       </div>

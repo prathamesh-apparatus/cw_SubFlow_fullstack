@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Search, Pencil, Trash2, FolderOpen, ArrowRight } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, FolderOpen, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,23 +38,50 @@ export default function CategoriesPage() {
         <div className="relative flex-1"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search categories…" value={search} onChange={(e) => setSearch(e.target.value)} className="rounded-full border-transparent bg-secondary/70 pl-11 shadow-none focus:bg-card" /></div>
         <Select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-full sm:w-48"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="created_desc">Newest first</option><option value="expense_desc">Highest expense</option></Select>
       </div>
-      {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : items.length === 0 ? <Card><CardContent className="py-12 text-center text-muted-foreground">No categories found. Create one to organise subscriptions by team.</CardContent></Card> : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((c) => <Card key={c.id} className="group transition duration-300 hover:-translate-y-0.5 hover:shadow-md"><CardContent className="pt-5">
-            <div className="flex items-start justify-between">
-              <span className={cn('flex h-11 w-11 items-center justify-center rounded-2xl', pastelFor(c.name))}><FolderOpen className="h-5 w-5" /></span>
-              <div className="flex gap-1"><button onClick={() => openEdit(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card shadow-sm transition hover:bg-accent" aria-label="Edit"><Pencil className="h-4 w-4" /></button><button onClick={() => setDeleting(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-destructive shadow-sm transition hover:bg-accent" aria-label="Delete"><Trash2 className="h-4 w-4" /></button></div>
-            </div>
-            <Link href={`/dashboard/categories/${c.id}`} className="mt-3.5 block text-[15px] font-medium text-foreground hover:underline">{c.name}</Link>
-            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{c.description || 'No description'}</p>
-            <div className="mt-4 flex divide-x divide-border rounded-xl bg-secondary/50 py-2.5">
-              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{c.subscription_count ?? 0}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Subscriptions</p></div>
-              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{formatCurrency(c.total_monthly_expense || 0)}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Monthly</p></div>
-              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{formatDate(c.created_at)}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Created</p></div>
-            </div>
-            <Link href={`/dashboard/categories/${c.id}`} className="mt-4 flex items-center gap-1 text-[13px] font-medium text-emerald-700 transition-all hover:gap-2 hover:underline">View subscriptions<ArrowRight className="h-3.5 w-3.5" /></Link>
-          </CardContent></Card>)}
-        </div>)}
+      {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : (
+        <Card className="overflow-hidden"><CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-[13px]">
+              <thead>
+                <tr className="bg-secondary/60">
+                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</th>
+                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Subscriptions</th>
+                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Monthly expense</th>
+                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Created</th>
+                  <th className="whitespace-nowrap px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr className="border-t border-border/70"><td colSpan={5} className="px-5 py-10 text-center text-sm text-muted-foreground">No categories found.</td></tr>
+                ) : items.map((c) => (
+                  <tr key={c.id} className="border-t border-border/70 transition-colors hover:bg-accent/40">
+                    <td className="px-5 py-3 align-middle">
+                      <div className="flex items-center gap-3">
+                        <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', pastelFor(c.name))}><FolderOpen className="h-4 w-4" /></span>
+                        <div className="min-w-0">
+                          <Link href={`/dashboard/categories/${c.id}`} className="text-[13px] font-medium text-foreground hover:underline">{c.name}</Link>
+                          <p className="max-w-[280px] truncate text-[11px] text-muted-foreground">{c.description || 'No description'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-3 align-middle">{c.subscription_count ?? 0}</td>
+                    <td className="whitespace-nowrap px-5 py-3 align-middle font-medium">{formatCurrency(c.total_monthly_expense || 0)}</td>
+                    <td className="whitespace-nowrap px-5 py-3 align-middle">{formatDate(c.created_at)}</td>
+                    <td className="whitespace-nowrap px-5 py-3 align-middle">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/dashboard/categories/${c.id}`} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label={`View ${c.name}`}><Eye className="h-4 w-4" /></Link>
+                        <button onClick={() => openEdit(c)} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label={`Edit ${c.name}`}><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => setDeleting(c)} className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50" aria-label={`Delete ${c.name}`}><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="border-t px-4 py-2.5 text-[11px] text-muted-foreground">Showing {items.length} categories</p>
+        </CardContent></Card>)}
       <Dialog open={dialog} onClose={() => setDialog(false)} title={editing ? 'Edit Category' : 'Create Category'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div><Label>Category Name *</Label><Input {...register('name')} placeholder="Development Team" className="mt-1.5" />{errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}</div>

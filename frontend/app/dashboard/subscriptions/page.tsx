@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { SubscriptionTable } from '@/components/subscriptions/subscription-table';
+import { SubscriptionDrawer } from '@/components/subscriptions/subscription-drawer';
 import { subscriptionService } from '@/services/subscription.service';
 import { categoryService } from '@/services/category.service';
 import toast from 'react-hot-toast';
@@ -18,6 +19,7 @@ function Inner() {
   const [items, setItems] = useState<Subscription[]>([]); const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0); const [totalPages, setTotalPages] = useState(1); const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Subscription | null>(null); const [delLoading, setDelLoading] = useState(false);
+  const [drawer, setDrawer] = useState<{ id: string; mode: 'view' | 'edit' } | null>(null);
   const [f, setF] = useState({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v, page: k === 'page' ? v : '1' }));
   const sp = useSearchParams();
@@ -45,9 +47,10 @@ function Inner() {
         </div>
       </div>
       <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{total} subscription(s)</p><Button variant="ghost" size="sm" onClick={clear}><X className="h-4 w-4" /> Clear all filters</Button></div>
-      <Card className="overflow-hidden"><CardContent className="p-0">{loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} />}</CardContent></Card>
+      <Card className="overflow-hidden"><CardContent className="p-0">{loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} onView={(s) => setDrawer({ id: s.id, mode: 'view' })} onEdit={(s) => setDrawer({ id: s.id, mode: 'edit' })} />}</CardContent></Card>
       <div className="flex items-center justify-between"><Button variant="outline" size="sm" disabled={Number(f.page) <= 1} onClick={() => set('page', String(Number(f.page) - 1))}>Previous</Button><span className="text-sm text-muted-foreground">Page {f.page} of {totalPages}</span><Button variant="outline" size="sm" disabled={Number(f.page) >= totalPages} onClick={() => set('page', String(Number(f.page) + 1))}>Next</Button></div>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} loading={delLoading} title="Delete subscription?" description={`Delete "${deleting?.name}" permanently? This cannot be undone.`} />
+      <SubscriptionDrawer subscriptionId={drawer?.id ?? null} initialMode={drawer?.mode ?? 'view'} onClose={() => setDrawer(null)} onChanged={load} />
     </div>
   );
 }
