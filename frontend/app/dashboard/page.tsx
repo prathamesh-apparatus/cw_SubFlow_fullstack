@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
 import type { Overview, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
+const cycleLabels: Record<string, string> = { monthly: 'Monthly', quarterly: 'Quarterly', half_yearly: 'Half-Yearly', yearly: 'Yearly', custom: 'Custom' };
 export default function DashboardPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -82,7 +83,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>Monthly Expenses</CardTitle><p className="text-sm text-muted-foreground">Last 12 months, from payment history</p></CardHeader>
+          <CardHeader><CardTitle>Monthly Expenses</CardTitle><p className="text-sm text-muted-foreground">Last 12 months · normalised monthly spend</p></CardHeader>
           <CardContent><ExpensesChart data={expenses} /></CardContent>
         </Card>
         <Card>
@@ -91,8 +92,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle>Upcoming Renewals</CardTitle>
@@ -103,9 +104,54 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>{renewalList.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No renewals in the next {tab} days.</p> : <div className="divide-y divide-border/70">{renewalList.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><CreditCard className="h-4 w-4" /></span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name}</p></div><div className="text-right"><p className="font-semibold text-foreground">{formatCurrency(s.total_amount, s.currency)}</p><p className="text-xs text-muted-foreground">{formatDate(s.next_renewal_date)}</p></div></div>)}</div>}</CardContent>
         </Card>
-        <Card>
-          <CardHeader><CardTitle>Recently Added</CardTitle></CardHeader>
-          <CardContent>{recent.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No subscriptions yet. <Link href="/dashboard/subscriptions/new" className="font-medium text-emerald-700 underline">Add your first one</Link></p> : <div className="divide-y divide-border/70">{recent.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name} · {formatDate(s.created_at)}</p></div><Badge>{s.status}</Badge></div>)}</div>}</CardContent>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>Recent Subscriptions</CardTitle>
+                <p className="text-sm text-muted-foreground">Latest plans added across categories</p>
+              </div>
+              <Link href="/dashboard/subscriptions" className="text-[13px] font-medium text-emerald-700 hover:underline">View all →</Link>
+            </div>
+          </CardHeader>
+          {recent.length === 0 ? (
+            <CardContent><p className="py-6 text-center text-sm text-muted-foreground">No subscriptions yet.</p></CardContent>
+          ) : (
+            <div className="overflow-x-auto pb-2">
+              <table className="w-full min-w-[620px]">
+                <thead>
+                  <tr className="bg-secondary/60">
+                    <th className="py-2.5 pl-5 pr-3 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Subscription</th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Category</th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Amount</th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Cycle</th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Status</th>
+                    <th className="py-2.5 pl-3 pr-5 text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Renewal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((s) => (
+                    <tr key={s.id} className="border-t border-border/60 text-[13px]">
+                      <td className="py-3 pl-5 pr-3">
+                        <div className="flex items-center gap-3">
+                          <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[13px] font-semibold', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span>
+                          <div className="min-w-0">
+                            <Link href={`/dashboard/subscriptions/${s.id}`} className="font-medium text-foreground hover:underline">{s.name}</Link>
+                            <p className="truncate text-[11px] text-muted-foreground">{s.account_email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground">{s.category_name}</td>
+                      <td className="px-3 py-3 font-medium text-foreground">{formatCurrency(s.total_amount, s.currency)}</td>
+                      <td className="px-3 py-3 text-muted-foreground">{cycleLabels[s.billing_cycle] || s.billing_cycle}</td>
+                      <td className="px-3 py-3"><Badge>{s.status}</Badge></td>
+                      <td className="py-3 pl-3 pr-5 text-muted-foreground">{formatDate(s.next_renewal_date)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
     </div>

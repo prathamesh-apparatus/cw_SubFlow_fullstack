@@ -21,7 +21,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   return (
     <>
       {open && <div className="fixed inset-0 z-40 bg-foreground/40 lg:hidden" onClick={onClose} />}
-      <aside className={cn('fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-white p-4 shadow-[10px_0_36px_-16px_rgba(16,24,40,0.18)] transition-transform lg:translate-x-0', open ? 'translate-x-0' : '-translate-x-full')}>
+      <aside className={cn('fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-[#ECE9E0] p-4 shadow-[10px_0_36px_-16px_rgba(16,24,40,0.18)] transition-transform lg:translate-x-0', open ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex items-start justify-between gap-2 px-1 pt-1">
           <Link href="/dashboard" aria-label="SubFlow — Dashboard">
             <Logo />

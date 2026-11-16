@@ -9,7 +9,7 @@ export class DashboardService {
     return rows[0];
   }
   async expenses() {
-    const { rows } = await this.db.query(`SELECT to_char(date_trunc('month', payment_date),'YYYY-MM') AS month, COALESCE(SUM(amount),0) AS total FROM payment_history WHERE payment_date >= (date_trunc('month', CURRENT_DATE) - INTERVAL '11 months') GROUP BY 1 ORDER BY 1`);
+    const { rows } = await this.db.query(`SELECT to_char(m.month,'YYYY-MM') AS month, COALESCE(SUM(${M}),0) AS total FROM generate_series(date_trunc('month', CURRENT_DATE) - INTERVAL '11 months', date_trunc('month', CURRENT_DATE), INTERVAL '1 month') AS m(month) LEFT JOIN subscriptions s ON s.created_at < m.month + INTERVAL '1 month' AND s.status NOT IN ('cancelled','expired') GROUP BY 1 ORDER BY 1`);
     const map = new Map(rows.map((r: any) => [r.month, Number(r.total)]));
     const out: any[] = []; const now = new Date();
     for (let i = 11; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); out.push({ month: key, label: d.toLocaleString('en',{month:'short'})+' '+d.getFullYear(), total: map.get(key) || 0 }); }
