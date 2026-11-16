@@ -12,6 +12,7 @@ const config: Config = {
       destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
       border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))',
       success: 'hsl(var(--success))', warning: 'hsl(var(--warning))',
+      brand: 'hsl(var(--brand))',
     },
     borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)', sm: 'calc(var(--radius) - 4px)' },
     fontFamily: { sans: ['var(--font-sans)', 'system-ui', 'sans-serif'] },

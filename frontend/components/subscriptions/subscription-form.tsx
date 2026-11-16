@@ -56,12 +56,12 @@ export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Sub
         {field('Billing Cycle', <Select {...register('billing_cycle')}><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="half_yearly">Half-Yearly</option><option value="yearly">Yearly</option><option value="custom">Custom</option></Select>)}
         {cycle === 'custom' ? field('Custom Billing Interval (days) *', <Input type="number" min="1" {...register('custom_billing_days')} />, errors.custom_billing_days?.message) : null}
         {field('Tax Amount', <Input type="number" step="0.01" min="0" {...register('tax_amount')} />, errors.tax_amount?.message)}
-        <div><Label>Total Amount (auto)</Label><div className="mt-1.5 flex h-10 items-center rounded-md border bg-muted px-3 text-sm font-semibold">₹{total.toFixed(2)}</div></div>
+        <div><Label>Total Amount (auto)</Label><div className="mt-1.5 flex h-11 items-center rounded-xl border bg-muted px-3.5 text-sm font-semibold">₹{total.toFixed(2)}</div></div>
       </>)}
       {section('C. Payment Details', <>
         {field('Payment Method', <Select {...register('payment_method')}><option value="">Select…</option><option value="credit_card">Credit Card</option><option value="debit_card">Debit Card</option><option value="upi">UPI</option><option value="net_banking">Net Banking</option><option value="other">Other</option></Select>)}
         {field('Payment Status', <Select {...register('payment_status')}><option value="paid">Paid</option><option value="pending">Pending</option><option value="failed">Failed</option></Select>)}
-        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autopay" {...register('auto_pay_enabled')} className="h-4 w-4" /><Label htmlFor="autopay">Auto-Pay Enabled</Label></div>
+        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autopay" {...register('auto_pay_enabled')} className="h-4 w-4 accent-brand" /><Label htmlFor="autopay">Auto-Pay Enabled</Label></div>
         {field('Payment Notes', <Input {...register('payment_notes')} placeholder="No card numbers — notes only" />)}
       </>)}
       {section('D. Renewal Information', <>
@@ -69,12 +69,12 @@ export function SubscriptionForm({ initial, defaultCategoryId }: { initial?: Sub
         {field('Last Payment Date', <Input type="date" {...register('last_payment_date')} />)}
         {field('Next Renewal Date', <Input type="date" {...register('next_renewal_date')} />)}
         {field('End Date', <Input type="date" {...register('end_date')} />)}
-        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="reminder" {...register('renewal_reminder')} className="h-4 w-4" /><Label htmlFor="reminder">Renewal Reminder</Label></div>
+        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="reminder" {...register('renewal_reminder')} className="h-4 w-4 accent-brand" /><Label htmlFor="reminder">Renewal Reminder</Label></div>
         {field('Reminder Days Before', <Select {...register('reminder_days_before')}><option value={3}>3 Days</option><option value={7}>7 Days</option><option value={15}>15 Days</option><option value={30}>30 Days</option></Select>)}
       </>)}
       {section('E. Subscription Status', <>
         {field('Status', <Select {...register('status')}><option value="active">Active</option><option value="inactive">Inactive</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option><option value="trial">Trial</option></Select>)}
-        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autorenew" {...register('auto_renewal_enabled')} className="h-4 w-4" /><Label htmlFor="autorenew">Auto-Renewal Enabled</Label></div>
+        <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="autorenew" {...register('auto_renewal_enabled')} className="h-4 w-4 accent-brand" /><Label htmlFor="autorenew">Auto-Renewal Enabled</Label></div>
         {field('Internal Notes', <Input {...register('notes')} placeholder="Internal notes" />)}
       </>)}
       <div className="flex gap-2"><Button type="submit" disabled={submitting}>{submitting ? 'Saving…' : initial ? 'Update Subscription' : 'Create Subscription'}</Button><Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button></div>

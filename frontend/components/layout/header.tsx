@@ -1,13 +1,19 @@
 'use client';
-import { Menu, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 export function Header({ title, email, onMenu }: { title: string; email?: string; onMenu: () => void }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-10">
       <div className="flex items-center gap-3">
-        <button className="lg:hidden rounded p-2 hover:bg-accent" onClick={onMenu} aria-label="Open menu"><Menu className="h-5 w-5" /></button>
-        <div><p className="text-xs text-muted-foreground">SubFlow / {title}</p><h1 className="text-lg font-semibold leading-tight">{title}</h1></div>
+        <button className="flex h-10 w-10 items-center justify-center rounded-full border bg-card shadow-sm transition hover:bg-accent lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu className="h-5 w-5" /></button>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">SubFlow / {title}</p>
+          <h1 className="text-xl font-bold leading-tight tracking-tight text-foreground">{title}</h1>
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-sm"><span className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-secondary"><User className="h-4 w-4" /></span><span className="hidden md:block text-muted-foreground">{email || 'Admin'}</span></div>
+      <div className="flex items-center gap-3">
+        <span className="hidden text-sm font-medium text-muted-foreground md:block">{email || 'Admin'}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white shadow-sm">{(email || 'A').charAt(0).toUpperCase()}</span>
+      </div>
     </header>
   );
 }

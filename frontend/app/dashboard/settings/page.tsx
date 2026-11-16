@@ -12,11 +12,11 @@ export default function SettingsPage() {
   useEffect(() => { authService.me().then(setAdmin).catch(() => {}); }, []);
   const logout = async () => { try { await authService.logout(); } catch {} router.push('/login'); };
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5 max-w-2xl"><div><h2 className="text-3xl font-bold tracking-tight text-foreground">Settings</h2><p className="mt-1 text-sm text-muted-foreground">Your admin account and application details.</p></div>
       <Card><CardHeader><CardTitle>Account</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <div className="flex justify-between border-b py-2"><span className="text-muted-foreground">Admin Email</span><span className="font-medium">{admin?.email || 'Loading…'}</span></div>
         <div className="flex justify-between border-b py-2"><span className="text-muted-foreground">Role</span><span className="font-medium">Administrator (single-admin system)</span></div>
-        <div className="flex justify-between py-2"><span className="text-muted-foreground">Authentication</span><span className="flex items-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-green-600" /> JWT in HTTP-only cookie</span></div>
+        <div className="flex justify-between py-2"><span className="text-muted-foreground">Authentication</span><span className="flex items-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-brand" /> JWT in HTTP-only cookie</span></div>
         <p className="text-xs text-muted-foreground">To change the admin email or password, update ADMIN_EMAIL / ADMIN_PASSWORD in your environment and re-run <code className="rounded bg-secondary px-1">npm run seed</code> in the backend — the seed upserts the single admin securely with bcrypt. There is no public registration.</p>
       </CardContent></Card>
       <Card><CardHeader><CardTitle>Application</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">

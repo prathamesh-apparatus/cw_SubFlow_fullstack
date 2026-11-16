@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               color: 'hsl(var(--foreground))',
               border: '1px solid hsl(var(--border))',
               borderRadius: 'calc(var(--radius) + 2px)',
-              boxShadow: '0 12px 32px rgba(6, 32, 27, 0.14)',
+              boxShadow: '0 12px 32px rgba(28, 25, 23, 0.16)',
               fontSize: '14px',
               fontWeight: 500,
               padding: '12px 14px',
