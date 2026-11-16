@@ -1,0 +1,3 @@
+import { api } from '@/lib/api';
+import type { Category, Paginated, Subscription } from '@/types';
+export const categoryService = { list: (search = '', sort = 'name_asc') => api.get<Category[]>(`/categories?search=${encodeURIComponent(search)}&sort=${sort}`), get: (id: string) => api.get<Category>(`/categories/${id}`), create: (d: unknown) => api.post<Category>('/categories', d), update: (id: string, d: unknown) => api.patch<Category>(`/categories/${id}`, d), remove: (id: string) => api.delete(`/categories/${id}`), subscriptions: (id: string) => api.get<Paginated<Subscription>>(`/categories/${id}/subscriptions?limit=100`) };

@@ -1,0 +1,9 @@
+CREATE INDEX IF NOT EXISTS idx_subscriptions_category ON subscriptions(category_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_next_renewal ON subscriptions(next_renewal_date);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_billing_cycle ON subscriptions(billing_cycle);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_payment_status ON subscriptions(payment_status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_name_lower ON subscriptions(lower(name));
+CREATE INDEX IF NOT EXISTS idx_subscriptions_email_lower ON subscriptions(lower(account_email));
+CREATE INDEX IF NOT EXISTS idx_payment_history_sub ON payment_history(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_payment_history_date ON payment_history(payment_date);

@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: subflow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-subflow}
+      POSTGRES_USER: ${DATABASE_USER:-subflow}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-change_me_strong_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-subflow} -d ${DATABASE_NAME:-subflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [subflow_net]
+  backend:
+    build: ./backend
+    container_name: subflow_backend
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      BACKEND_PORT: ${BACKEND_PORT:-4000}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [subflow_net]
+  frontend:
+    build: ./frontend
+    container_name: subflow_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+    ports:
+      - "3000:3000"
+    depends_on: [backend]
+    networks: [subflow_net]
+volumes:
+  postgres_data:
+networks:
+  subflow_net:
+    driver: bridge
