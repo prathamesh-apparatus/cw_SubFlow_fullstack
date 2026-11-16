@@ -38,11 +38,11 @@ export default function DashboardPage() {
   ];
   const renewalList: Subscription[] = renewals ? (tab === 7 ? renewals.within7 : tab === 15 ? renewals.within15 : renewals.within30) : [];
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />SubFlow Overview</p>
-          <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Dashboard</h2>
+          <h2 className="mt-1.5 text-xl font-medium tracking-tight text-foreground">Dashboard</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}><RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} /> Refresh</Button>
@@ -57,7 +57,7 @@ export default function DashboardPage() {
             {overviewStats.map((s, i) => (
               <div key={s.label} className={cn(i > 0 && 'lg:border-l lg:pl-8')}>
                 <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                <p className="mt-2 text-[28px] font-semibold leading-none tracking-tight text-foreground">{s.value}</p>
+                <p className="mt-2 text-2xl font-medium leading-none tracking-tight text-foreground">{s.value}</p>
                 <p className="mt-2 text-xs text-muted-foreground">{s.sub}</p>
               </div>
             ))}
@@ -73,7 +73,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-muted-foreground">{c.label}</p>
                 <span className={cn('flex h-9 w-9 items-center justify-center rounded-xl', c.iconTint)}><Icon className="h-4 w-4" /></span>
               </div>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{c.value}</p>
+              <p className="mt-3 text-xl font-medium tracking-tight text-foreground">{c.value}</p>
               <p className="mt-1.5 text-xs text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>

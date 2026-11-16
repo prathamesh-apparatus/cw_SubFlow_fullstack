@@ -26,11 +26,11 @@ export default function CategoryDetailsPage() {
   const onDelete = async () => { if (!deleting) return; try { await subscriptionService.remove(deleting.id); toast.success('Subscription deleted'); setDeleting(null); load(); } catch (e: any) { toast.error(e.message); } };
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-xl font-semibold tracking-tight text-foreground">{cat.name}</h2><p className="mt-1 text-sm text-muted-foreground">{cat.description || 'No description'}</p></div><Link href={`/dashboard/subscriptions/new?category=${id}`}><Button><Plus className="h-4 w-4" /> Add Subscription</Button></Link></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-xl font-medium tracking-tight text-foreground">{cat.name}</h2><p className="mt-1 text-sm text-muted-foreground">{cat.description || 'No description'}</p></div><Link href={`/dashboard/subscriptions/new?category=${id}`}><Button><Plus className="h-4 w-4" /> Add Subscription</Button></Link></div>
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {[['Total Subscriptions', subs.length], ['Active Subscriptions', active.length], ['Monthly Expenses', formatCurrency(monthly)], ['Yearly Expenses', formatCurrency(monthly * 12)]].map(([l, v]) => <Card key={String(l)}><CardContent className="pt-5"><p className="text-xs text-muted-foreground">{l}</p><p className="mt-1 text-xl font-semibold">{v}</p></CardContent></Card>)}
+        {[['Total Subscriptions', subs.length], ['Active Subscriptions', active.length], ['Monthly Expenses', formatCurrency(monthly)], ['Yearly Expenses', formatCurrency(monthly * 12)]].map(([l, v]) => <Card key={String(l)}><CardContent className="pt-5"><p className="text-xs text-muted-foreground">{l}</p><p className="mt-1 text-xl font-medium">{v}</p></CardContent></Card>)}
       </div>
-      <Card><CardContent className="p-0"><SubscriptionTable items={subs} onDelete={setDeleting} /></CardContent></Card>
+      <Card className="overflow-hidden"><CardContent className="p-0"><SubscriptionTable items={subs} onDelete={setDeleting} /></CardContent></Card>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} title="Delete subscription?" description={`Delete "${deleting?.name}" permanently?`} />
     </div>
   );

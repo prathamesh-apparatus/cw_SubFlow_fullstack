@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, FolderOpen, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog';
 import { categoryService } from '@/services/category.service';
 import { categorySchema, CategoryFormValues } from '@/lib/validations';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import type { Category } from '@/types';
 export const dynamic = 'force-dynamic';
@@ -31,7 +31,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
+        <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-medium tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
         <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add Category</Button>
       </div>
       <div className="flex flex-col gap-3 rounded-[1.25rem] border bg-card p-3 shadow-sm sm:flex-row sm:items-center">
@@ -40,11 +40,19 @@ export default function CategoriesPage() {
       </div>
       {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : items.length === 0 ? <Card><CardContent className="py-12 text-center text-muted-foreground">No categories found. Create one to organise subscriptions by team.</CardContent></Card> : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((c) => <Card key={c.id} className="transition hover:shadow-[0_20px_44px_-16px_rgba(28,25,23,0.18)]"><CardContent className="pt-5">
-            <div className="flex items-start justify-between"><Link href={`/dashboard/categories/${c.id}`} className="text-lg font-semibold hover:underline">{c.name}</Link><div className="flex gap-1"><button onClick={() => openEdit(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card shadow-sm transition hover:bg-accent" aria-label="Edit"><Pencil className="h-4 w-4" /></button><button onClick={() => setDeleting(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-destructive shadow-sm transition hover:bg-accent" aria-label="Delete"><Trash2 className="h-4 w-4" /></button></div></div>
-            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.description || 'No description'}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm"><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold">{c.subscription_count ?? 0}</p><p className="text-[11px] text-muted-foreground">Subscriptions</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold">{formatCurrency(c.total_monthly_expense || 0)}</p><p className="text-[11px] text-muted-foreground">Monthly</p></div><div className="rounded-2xl bg-secondary p-2.5"><p className="font-semibold text-xs pt-1">{formatDate(c.created_at)}</p><p className="text-[11px] text-muted-foreground">Created</p></div></div>
-            <Link href={`/dashboard/categories/${c.id}`} className="mt-4 flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline"><Eye className="h-4 w-4" /> View subscriptions</Link>
+          {items.map((c) => <Card key={c.id} className="group transition duration-300 hover:-translate-y-0.5 hover:shadow-md"><CardContent className="pt-5">
+            <div className="flex items-start justify-between">
+              <span className={cn('flex h-11 w-11 items-center justify-center rounded-2xl', pastelFor(c.name))}><FolderOpen className="h-5 w-5" /></span>
+              <div className="flex gap-1"><button onClick={() => openEdit(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card shadow-sm transition hover:bg-accent" aria-label="Edit"><Pencil className="h-4 w-4" /></button><button onClick={() => setDeleting(c)} className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-destructive shadow-sm transition hover:bg-accent" aria-label="Delete"><Trash2 className="h-4 w-4" /></button></div>
+            </div>
+            <Link href={`/dashboard/categories/${c.id}`} className="mt-3.5 block text-[15px] font-medium text-foreground hover:underline">{c.name}</Link>
+            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{c.description || 'No description'}</p>
+            <div className="mt-4 flex divide-x divide-border rounded-xl bg-secondary/50 py-2.5">
+              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{c.subscription_count ?? 0}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Subscriptions</p></div>
+              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{formatCurrency(c.total_monthly_expense || 0)}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Monthly</p></div>
+              <div className="flex-1 text-center"><p className="text-[13px] font-medium text-foreground">{formatDate(c.created_at)}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Created</p></div>
+            </div>
+            <Link href={`/dashboard/categories/${c.id}`} className="mt-4 flex items-center gap-1 text-[13px] font-medium text-emerald-700 transition-all hover:gap-2 hover:underline">View subscriptions<ArrowRight className="h-3.5 w-3.5" /></Link>
           </CardContent></Card>)}
         </div>)}
       <Dialog open={dialog} onClose={() => setDialog(false)} title={editing ? 'Edit Category' : 'Create Category'}>
