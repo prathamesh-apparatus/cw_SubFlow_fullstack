@@ -1,6 +1,7 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,12 +14,14 @@ import { categoryService } from '@/services/category.service';
 import toast from 'react-hot-toast';
 import type { Category, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
-export default function SubscriptionsPage() {
+function Inner() {
   const [items, setItems] = useState<Subscription[]>([]); const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0); const [totalPages, setTotalPages] = useState(1); const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<Subscription | null>(null); const [delLoading, setDelLoading] = useState(false);
   const [f, setF] = useState({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v, page: k === 'page' ? v : '1' }));
+  const sp = useSearchParams();
+  useEffect(() => { const q = sp.get('q'); if (q !== null) setF((p) => (p.search === q ? p : { ...p, search: q, page: '1' })); }, [sp]);
   const load = useCallback(() => { setLoading(true); const params: Record<string, string> = {}; Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; }); subscriptionService.list(params).then((r) => { setItems(r.items); setTotal(r.total); setTotalPages(r.totalPages); }).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   useEffect(() => { categoryService.list().then(setCategories).catch(() => {}); }, []);
@@ -27,7 +30,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><h2 className="text-xl font-semibold tracking-tight text-foreground">All Subscriptions</h2><p className="mt-1 text-sm text-muted-foreground">Every plan across every team, in one place.</p></div>
+        <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">All Subscriptions</h2><p className="mt-1 text-sm text-muted-foreground">Every plan across every team, in one place.</p></div>
         <Link href="/dashboard/subscriptions/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Subscription</Button></Link>
       </div>
       <div className="space-y-3 rounded-[1.25rem] border bg-card p-3 shadow-sm">
@@ -48,3 +51,4 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
+export default function SubscriptionsPage() { return <Suspense fallback={<p className="py-12 text-center text-muted-foreground">Loading…</p>}><Inner /></Suspense>; }

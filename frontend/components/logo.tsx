@@ -2,9 +2,12 @@ import { cn } from '@/lib/utils';
 
 /**
  * SubFlow logo mark — self-contained inline SVG.
- * All fills are hardcoded hex + an SVG gradient on purpose:
- * the mark must NEVER depend on Tailwind theme colours, so it
- * renders identically in every build.
+ * A geometric faceted "flow S": two slanted parallelogram ribbons
+ * (emerald / teal) offset into an S-flow, with a small mint diamond
+ * shard accent. All fills are hardcoded hex on purpose — the mark
+ * must NEVER depend on Tailwind theme colours, so it renders
+ * identically in every build. No background square: the shards
+ * themselves are the mark.
  */
 export function LogoMark({ size = 36, className }: { size?: number; className?: string }) {
   return (
@@ -19,16 +22,9 @@ export function LogoMark({ size = 36, className }: { size?: number; className?: 
       role="img"
       aria-label="SubFlow logo"
     >
-      <defs>
-        <linearGradient id="subflow-g" x1="2" y1="2" x2="62" y2="62" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#10B981" />
-          <stop offset="1" stopColor="#047857" />
-        </linearGradient>
-      </defs>
-      <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#subflow-g)" />
-      <polygon points="32,12 54,23 32,34 10,23" fill="#FFFFFF" />
-      <path d="M12,33 L32,43 L52,33" stroke="#FFFFFF" strokeWidth="4.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
-      <path d="M12,43 L32,53 L52,43" stroke="#FFFFFF" strokeWidth="4.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+      <polygon points="14,10 42,10 34,30 6,30" fill="#059669" />
+      <polygon points="46,10 58,10 50,30 38,30" fill="#34D399" opacity="0.9" />
+      <polygon points="50,34 22,34 30,54 58,54" fill="#0F766E" />
     </svg>
   );
 }
@@ -38,9 +34,9 @@ export function Logo({ markSize = 32, className }: { markSize?: number; classNam
   return (
     <span className={cn('flex items-center gap-2.5', className)}>
       <LogoMark size={markSize} />
-      <span className="text-[17px] tracking-tight">
-        <span className="font-semibold text-foreground">Sub</span>
-        <span className="font-semibold" style={{ color: '#059669' }}>Flow</span>
+      <span className="text-[19px] font-bold tracking-tight">
+        <span className="text-foreground">Sub</span>
+        <span style={{ color: '#059669' }}>Flow</span>
       </span>
     </span>
   );

@@ -12,7 +12,7 @@ export default function SettingsPage() {
   useEffect(() => { authService.me().then(setAdmin).catch(() => {}); }, []);
   const logout = async () => { try { await authService.logout(); } catch {} router.push('/login'); };
   return (
-    <div className="space-y-5 max-w-2xl"><div><h2 className="text-xl font-semibold tracking-tight text-foreground">Settings</h2><p className="mt-1 text-sm text-muted-foreground">Your admin account and application details.</p></div>
+    <div className="space-y-5 max-w-2xl"><div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />System</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Settings</h2><p className="mt-1 text-sm text-muted-foreground">Your admin account and application details.</p></div>
       <Card><CardHeader><CardTitle>Account</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <div className="flex justify-between border-b py-2"><span className="text-muted-foreground">Admin Email</span><span className="font-medium">{admin?.email || 'Loading…'}</span></div>
         <div className="flex justify-between border-b py-2"><span className="text-muted-foreground">Role</span><span className="font-medium">Administrator (single-admin system)</span></div>

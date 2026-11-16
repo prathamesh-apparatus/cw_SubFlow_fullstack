@@ -40,7 +40,7 @@ export default function LoginPage() {
     <main className="login-backdrop flex min-h-screen items-center justify-center p-4 sm:p-8">
       <div className="w-full max-w-md rounded-[1.5rem] border bg-card p-7 shadow-[0_24px_64px_-20px_rgba(28,25,23,0.28)] sm:p-8">
         <div className="flex flex-col items-center text-center">
-          <LogoMark size={46} className="drop-shadow-lg" />
+          <LogoMark size={48} />
           <h1 className="mt-5 text-[22px] font-semibold leading-tight tracking-tight text-foreground">Welcome to SubFlow</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">Sign in to manage your subscriptions</p>
         </div>

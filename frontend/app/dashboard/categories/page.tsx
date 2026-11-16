@@ -31,7 +31,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><h2 className="text-xl font-semibold tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
+        <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Categories</h2><p className="mt-1 text-sm text-muted-foreground">Organise subscriptions by team and track what each one spends.</p></div>
         <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add Category</Button>
       </div>
       <div className="flex flex-col gap-3 rounded-[1.25rem] border bg-card p-3 shadow-sm sm:flex-row sm:items-center">

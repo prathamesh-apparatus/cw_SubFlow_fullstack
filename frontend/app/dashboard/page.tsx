@@ -1,13 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp } from 'lucide-react';
+import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExpensesChart, CategoryDonut } from '@/components/dashboard/charts';
 import { dashboardService } from '@/services/dashboard.service';
 import toast from 'react-hot-toast';
-import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
 import type { Overview, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
 export default function DashboardPage() {
@@ -18,7 +19,10 @@ export default function DashboardPage() {
   const [renewals, setRenewals] = useState<any>(null);
   const [tab, setTab] = useState<7 | 15 | 30>(30);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { Promise.all([dashboardService.overview(), dashboardService.expenses(), dashboardService.breakdown(), dashboardService.recent(), dashboardService.renewalsGrouped()]).then(([o, e, b, r, g]) => { setOverview(o); setExpenses(e); setBreakdown(b); setRecent(r); setRenewals(g); }).catch((e) => toast.error(e.message || 'Failed to load dashboard — make sure the backend is running.')).finally(() => setLoading(false)); }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  const load = useCallback(() => Promise.all([dashboardService.overview(), dashboardService.expenses(), dashboardService.breakdown(), dashboardService.recent(), dashboardService.renewalsGrouped()]).then(([o, e, b, r, g]) => { setOverview(o); setExpenses(e); setBreakdown(b); setRecent(r); setRenewals(g); }).catch((e) => toast.error(e.message || 'Failed to load dashboard — make sure the backend is running.')), []);
+  useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
+  const onRefresh = async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } };
   if (loading) return <p className="py-16 text-center text-muted-foreground">Loading dashboard…</p>;
   const overviewStats = [
     { label: 'Total Categories', value: overview?.total_categories ?? 0, sub: 'Organised by team' },
@@ -27,17 +31,20 @@ export default function DashboardPage() {
     { label: 'Inactive Subscriptions', value: overview?.inactive_subscriptions ?? 0, sub: 'Paused or ended' },
   ];
   const miniCards = [
-    { label: 'Monthly Expenses', value: formatCurrency(overview?.monthly_recurring || 0), sub: 'Per month, normalised', icon: IndianRupee },
-    { label: 'Yearly Expenses', value: formatCurrency(overview?.yearly_recurring || 0), sub: 'Per year, normalised', icon: TrendingUp },
-    { label: 'Auto-Pay Enabled', value: overview?.auto_pay_enabled ?? 0, sub: 'Subscriptions on auto-pay', icon: Zap },
-    { label: 'Upcoming Renewals', value: overview?.upcoming_renewals ?? 0, sub: 'In the next 30 days', icon: CalendarClock },
+    { label: 'Monthly Expenses', value: formatCurrency(overview?.monthly_recurring || 0), sub: 'Per month, normalised', icon: IndianRupee, tint: 'bg-gradient-to-br from-white to-sky-50', iconTint: 'bg-sky-100 text-sky-700' },
+    { label: 'Yearly Expenses', value: formatCurrency(overview?.yearly_recurring || 0), sub: 'Per year, normalised', icon: TrendingUp, tint: 'bg-gradient-to-br from-white to-violet-50', iconTint: 'bg-violet-100 text-violet-700' },
+    { label: 'Auto-Pay Enabled', value: overview?.auto_pay_enabled ?? 0, sub: 'Subscriptions on auto-pay', icon: Zap, tint: 'bg-gradient-to-br from-white to-amber-50', iconTint: 'bg-amber-100 text-amber-700' },
+    { label: 'Upcoming Renewals', value: overview?.upcoming_renewals ?? 0, sub: 'In the next 30 days', icon: CalendarClock, tint: 'bg-gradient-to-br from-white to-rose-50', iconTint: 'bg-rose-100 text-rose-700' },
   ];
   const renewalList: Subscription[] = renewals ? (tab === 7 ? renewals.within7 : tab === 15 ? renewals.within15 : renewals.within30) : [];
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back, Admin</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">Here&apos;s what&apos;s happening across your subscriptions today.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />SubFlow Overview</p>
+          <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-foreground">Dashboard</h2>
+        </div>
+        <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}><RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} /> Refresh</Button>
       </div>
 
       <Card>
@@ -57,11 +64,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {miniCards.map((c) => { const Icon = c.icon; return (
-          <Card key={c.label}>
+          <Card key={c.label} className={c.tint}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">{c.label}</p>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"><Icon className="h-4 w-4" /></span>
+                <span className={cn('flex h-9 w-9 items-center justify-center rounded-xl', c.iconTint)}><Icon className="h-4 w-4" /></span>
               </div>
               <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{c.value}</p>
               <p className="mt-1.5 text-xs text-muted-foreground">{c.sub}</p>
@@ -95,7 +102,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader><CardTitle>Recently Added</CardTitle></CardHeader>
-          <CardContent>{recent.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No subscriptions yet. <Link href="/dashboard/subscriptions/new" className="font-medium text-emerald-700 underline">Add your first one</Link></p> : <div className="divide-y divide-border/70">{recent.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-sm font-semibold text-foreground">{s.name.charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name} · {formatDate(s.created_at)}</p></div><Badge>{s.status}</Badge></div>)}</div>}</CardContent>
+          <CardContent>{recent.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No subscriptions yet. <Link href="/dashboard/subscriptions/new" className="font-medium text-emerald-700 underline">Add your first one</Link></p> : <div className="divide-y divide-border/70">{recent.map((s) => <div key={s.id} className="flex items-center gap-3.5 py-3.5"><span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold', pastelFor(s.name))}>{s.name.charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><Link href={`/dashboard/subscriptions/${s.id}`} className="font-semibold text-foreground hover:underline">{s.name}</Link><p className="truncate text-xs text-muted-foreground">{s.category_name} · {formatDate(s.created_at)}</p></div><Badge>{s.status}</Badge></div>)}</div>}</CardContent>
         </Card>
       </div>
     </div>
