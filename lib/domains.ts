@@ -9,7 +9,7 @@
 import { query } from './db';
 import { ApiError } from './http';
 import { fmtAmount, logActivity } from './notifications';
-import { toDateStr } from './renewal';
+import { computeNextRenewal, toDateStr } from './renewal';
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -129,10 +129,21 @@ const COLUMNS =
 
 export async function createDomain(dto: any) {
   await ensureDomainsTable();
+  // Expiry / next renewal are never entered by hand: both are computed from
+  // purchase_date + billing cycle (rolled forward), and registration_date
+  // mirrors the purchase date. Any client-sent dates are ignored.
+  const effective: any = { ...dto };
+  const purchaseDate = toDateStr(dto.purchase_date);
+  const computed = purchaseDate
+    ? computeNextRenewal(purchaseDate, dto.billing_cycle || 'yearly', dto.custom_billing_days ? Number(dto.custom_billing_days) : null, null)
+    : null;
+  effective.registration_date = purchaseDate;
+  effective.expiry_date = computed;
+  effective.next_renewal_date = computed;
   try {
     const { rows } = await query(
       `INSERT INTO domains (${COLUMNS}) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26) RETURNING *, (expiry_date - CURRENT_DATE) AS days_remaining`,
-      cols(dto),
+      cols(effective),
     );
     const d = rows[0];
     await logActivity(
@@ -227,10 +238,32 @@ function domainDiff(oldD: any, newD: any): string {
 
 export async function updateDomain(id: string, dto: any) {
   const old = await getDomain(id);
+  // Recompute expiry / next renewal from the EFFECTIVE purchase date + cycle.
+  // If the effective purchase date is NULL, the stored dates are kept as-is
+  // (cols() falls back to the old row for keys absent from the dto).
+  const effective: any = { ...dto };
+  const effPurchase = dto.purchase_date !== undefined ? toDateStr(dto.purchase_date) : toDateStr(old.purchase_date);
+  const effCycle = dto.billing_cycle || old.billing_cycle;
+  const effCustom =
+    dto.custom_billing_days !== undefined
+      ? dto.custom_billing_days
+        ? Number(dto.custom_billing_days)
+        : null
+      : old.custom_billing_days ?? null;
+  if (effPurchase) {
+    const computed = computeNextRenewal(effPurchase, effCycle, effCustom, null);
+    effective.registration_date = effPurchase;
+    effective.expiry_date = computed;
+    effective.next_renewal_date = computed;
+  } else {
+    delete effective.registration_date;
+    delete effective.expiry_date;
+    delete effective.next_renewal_date;
+  }
   try {
     const { rows } = await query(
       `UPDATE domains SET ${COLUMNS.split(',').map((c, i) => `${c}=$${i + 1}`).join(',')}, updated_at=NOW() WHERE id=$27 RETURNING *, (expiry_date - CURRENT_DATE) AS days_remaining`,
-      [...cols(dto, old), id],
+      [...cols(effective, old), id],
     );
     const updated = rows[0];
     try {

@@ -22,7 +22,7 @@ const empty: DomainFormValues = {
   purchased_from: '', purchase_date: '', purchase_cost: null, currency: 'INR',
   billing_cycle: 'yearly', custom_billing_days: null, invoice_reference: '',
   managed_by: '', management_platform: '', account_email: '', responsible_person: '', nameservers: '',
-  registration_date: '', expiry_date: '', next_renewal_date: '', renewal_cost: null,
+  renewal_cost: null,
   auto_renewal_enabled: false, renewal_reminder_enabled: true, reminder_days_before: 7,
   status: 'active', notes: '',
 };
@@ -43,9 +43,6 @@ export function DomainForm({ initial, onSaved, onCancel }: { initial?: Domain; o
           renewal_cost: initial.renewal_cost != null ? Number(initial.renewal_cost) : null,
           custom_billing_days: initial.custom_billing_days ?? null,
           purchase_date: toDate(initial.purchase_date),
-          registration_date: toDate(initial.registration_date),
-          expiry_date: toDate(initial.expiry_date),
-          next_renewal_date: toDate(initial.next_renewal_date),
           description: initial.description || '', project_name: initial.project_name || '',
           purchased_from: initial.purchased_from || '', invoice_reference: initial.invoice_reference || '',
           managed_by: initial.managed_by || '', management_platform: initial.management_platform || '',
@@ -63,7 +60,7 @@ export function DomainForm({ initial, onSaved, onCancel }: { initial?: Domain; o
   const onSubmit = async (values: DomainFormValues) => {
     if (submitting) return; setSubmitting(true);
     const payload: any = { ...values, domain_name: values.domain_name.trim().toLowerCase() };
-    ['description','project_name','purchased_from','purchase_date','invoice_reference','managed_by','management_platform','account_email','responsible_person','nameservers','registration_date','expiry_date','next_renewal_date','notes'].forEach((k) => { if (!payload[k]) payload[k] = null; });
+    ['description','project_name','purchased_from','purchase_date','invoice_reference','managed_by','management_platform','account_email','responsible_person','nameservers','notes'].forEach((k) => { if (!payload[k]) payload[k] = null; });
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
       if (initial) { const saved = await domainsService.update(initial.id, payload); toast.success('Domain updated'); if (onSaved) { onSaved(saved); return; } router.push('/dashboard/domains'); }
@@ -99,9 +96,6 @@ export function DomainForm({ initial, onSaved, onCancel }: { initial?: Domain; o
         {field('Nameservers', <Input {...register('nameservers')} placeholder="ns1.example.com, ns2.example.com" />)}
       </>)}
       {section('D. Expiry and Renewal Information', <>
-        {field('Start / Registration Date', <Input type="date" {...register('registration_date')} />)}
-        {field('Expiry Date', <Input type="date" {...register('expiry_date')} />)}
-        {field('Next Renewal Date', <Input type="date" {...register('next_renewal_date')} />)}
         {field('Renewal Cost', <Input type="number" step="0.01" min="0" {...register('renewal_cost', { setValueAs: numOrNull })} placeholder="0.00" />, errors.renewal_cost?.message)}
         <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="domain-autorenew" {...register('auto_renewal_enabled')} className="h-4 w-4 accent-emerald-600" /><Label htmlFor="domain-autorenew">Auto-Renewal Enabled</Label></div>
         <div className="flex items-center gap-2 pt-6"><input type="checkbox" id="domain-reminder" {...register('renewal_reminder_enabled')} className="h-4 w-4 accent-emerald-600" /><Label htmlFor="domain-reminder">Renewal Reminder Enabled</Label></div>

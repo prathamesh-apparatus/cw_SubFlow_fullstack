@@ -145,7 +145,6 @@ export function DomainDrawer({ domainId, initialMode, createOpen, onClose, onCha
                 <Row icon={CalendarClock} label="Registration date" value={formatDate(domain.registration_date)} />
                 <Row icon={CalendarX} label="Expiry date" value={formatDate(domain.expiry_date)} valueClass={band === 'expired' || band === 'd7' ? 'text-red-600' : undefined} />
                 <Row icon={Clock} label="Days remaining" value={domain.expiry_date ? expiryChipText(domain.days_remaining) : '—'} />
-                <Row icon={Repeat} label="Next renewal date" value={formatDate(domain.next_renewal_date)} />
                 <Row icon={CircleDollarSign} label="Renewal cost" value={domain.renewal_cost != null ? formatCurrency(domain.renewal_cost, domain.currency) : '—'} />
                 <Row icon={Zap} label="Auto-renewal" value={domain.auto_renewal_enabled ? 'Yes' : 'No'} />
                 <Row icon={AlarmClock} label="Renewal reminder" value={domain.renewal_reminder_enabled ? `Yes — ${domain.reminder_days_before} days before` : 'No'} />
