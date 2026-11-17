@@ -2,7 +2,7 @@
 // The notifications table is bootstrapped lazily (CREATE TABLE IF NOT EXISTS,
 // try/catch — never fails the request), replacing Nest's OnModuleInit hook.
 // sync() generates renewal_overdue / renewal_upcoming / payment_failed rows with
-// the same dedupe keys and emails only the newly inserted ones via Brevo.
+// the same dedupe keys and emails only the newly inserted ones via SMTP (Nodemailer).
 import { query } from './db';
 import { sendNotificationEmail } from './mail';
 import { ensureDomainsTable } from './domains';
@@ -181,7 +181,7 @@ export async function syncNotifications(): Promise<void> {
 /**
  * Record an activity event (subscription/category CRUD, settings changes) as an
  * in-app notification. NEVER throws — a failed log must not fail the caller's
- * mutation — and NEVER emails (Brevo stays reserved for renewal/payment alerts).
+ * mutation — and NEVER emails (email stays reserved for renewal/payment alerts).
  * dedupe_key is UNIQUE, so each event gets a one-off key. subscription_id is
  * nullable: delete events pass null because the FK is ON DELETE CASCADE.
  */

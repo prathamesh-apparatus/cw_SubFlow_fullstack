@@ -23,7 +23,7 @@ cw_SubFlow_fullstack/           # ONE flat Next.js project at the root — no fr
 │   └── 007_create_subscription_members.sql # who can use each subscription (name + optional email)
 ├── lib/                        # api.ts (fetch client), validations (Zod), utils +
 │                               #   server-only: db.ts (pg Pool), auth.ts (JWT/bcrypt), renewal.ts,
-│                               #   categories.ts, subscriptions.ts, domains.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
+│                               #   categories.ts, subscriptions.ts, domains.ts, dashboard.ts, notifications.ts, mail.ts (Nodemailer/SMTP)
 ├── scripts/seed-admin.mjs      # admin seed (npm run seed)
 ├── services/  types/  hooks/
 └── app/globals.css             # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
@@ -36,7 +36,7 @@ There is exactly **one env file: `.env` at the project root** (copy `.env.exampl
 
 ```powershell
 # 0. One-time: create the env file and set your values:
-Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD / BREVO_API_KEY
+Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD / SMTP_* (email, optional)
 
 # 1. Database — ONE Docker command (from the project root; reads the root .env automatically):
 docker compose up -d
@@ -96,7 +96,7 @@ Yearly recurring = monthly × 12. `total_amount = price + tax_amount` (computed 
 - Subscriptions: full CRUD with the A–E sectioned form (RHF + Zod, auto total), list with search, 5 filters, sorting, pagination, clear-filters; view/edit/delete happens in the slide-over panel on All Subscriptions.
 - Domains: full CRUD for organisation domains (Internal / External) — see the Domains module section below.
 - Renewals page: grouped Overdue / 7 / 15 / 30 days.
-- Notifications: header bell + page; renewal overdue/upcoming and payment-failed alerts generated from live data, with optional Brevo email to the admin.
+- Notifications: header bell + page; renewal overdue/upcoming and payment-failed alerts generated from live data, with optional email to the admin via Nodemailer (SMTP — set `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` in `.env`; for Gmail use an App Password as `SMTP_PASS`). Leave the SMTP vars empty to skip emails.
 - Settings: change email + change password (working, via `/api/auth/*`), real admin info from `/api/auth/me` + working logout.
 
 **Subscription members ("Who can use this subscription"):** a subscription's account is often shared by 2–3 team members, so each subscription can record who may use it — a list of members (name + optional email, max 20) stored in `subscription_members` (`database/init/007_create_subscription_members.sql`; `lib/subscriptions.ts` bootstraps the same DDL lazily for existing databases). The form's Section A has dynamic member rows; create/update accept a `members` array (updates replace the whole list, and only when the key is sent), `GET /api/subscriptions/:id` returns `members`, the list returns `member_count`, the details panel shows a "Shared with" section, and deleting a subscription cascades its members away.
@@ -121,7 +121,7 @@ Manage every organisation domain next to the subscriptions: where it was **purch
 
 **Project association:** SubFlow has **no projects system/table**, so a domain stores an optional free-text `project_name` — the form offers the distinct names already in use via a datalist (and you can type a new one), the list/details/filter all use it, one project can have many domains, and a domain can have none (`No project` in breakdowns). The `project_id UUID` column exists but is intentionally **without a foreign key**, reserved for a future projects table; deleting a domain never touches any project data.
 
-**Expiry tracking & notifications:** `expiry_date` and `next_renewal_date` are **never entered manually** — the form only asks for the purchase date and billing cycle, and on every save the server computes both dates from them (purchase date + one cycle, rolled forward to the next future date — the same rule subscriptions use; `registration_date` mirrors the purchase date). If a domain has no purchase date, its previously stored expiry dates are left untouched. `days_remaining` is computed in SQL from the stored `expiry_date`. The notification sync (the same one that produces subscription renewal alerts) also generates `domain_expiry_upcoming` — when a domain has its reminder enabled and `days_remaining <= reminder_days_before` (3/7/15/30) — and `domain_expired`, each **deduped per domain + expiry date (+ reminder period)**, and newly created ones get the same Brevo email as renewal alerts. Add / update (with a key-field diff) / delete of a domain are recorded as activity notifications, like subscriptions and categories.
+**Expiry tracking & notifications:** `expiry_date` and `next_renewal_date` are **never entered manually** — the form only asks for the purchase date and billing cycle, and on every save the server computes both dates from them (purchase date + one cycle, rolled forward to the next future date — the same rule subscriptions use; `registration_date` mirrors the purchase date). If a domain has no purchase date, its previously stored expiry dates are left untouched. `days_remaining` is computed in SQL from the stored `expiry_date`. The notification sync (the same one that produces subscription renewal alerts) also generates `domain_expiry_upcoming` — when a domain has its reminder enabled and `days_remaining <= reminder_days_before` (3/7/15/30) — and `domain_expired`, each **deduped per domain + expiry date (+ reminder period)**, and newly created ones get the same SMTP email (via Nodemailer) as renewal alerts. Add / update (with a key-field diff) / delete of a domain are recorded as activity notifications, like subscriptions and categories.
 
 **Costs:** purchase cost and renewal cost are stored separately, with currency and billing cycle. All totals are **grouped by currency and never combined across currencies**. The yearly figure normalises the effective cost (renewal cost when set, otherwise purchase cost): monthly × 12, yearly × 1, custom × (365.25 ÷ custom days). Domain statistics (total / internal / external / active / expired / expiring soon, cost totals, upcoming renewals) are computed live from the `domains` table and integrated into the main dashboard — domain totals live in the Overview card and upcoming domain renewals inside the Upcoming Renewals card — while remaining completely separate from subscription expenses.
 
@@ -145,4 +145,4 @@ git push origin main
 
 - Parameterized SQL everywhere (no string concatenation of user input); transactions for multi-write operations.
 - Passwords: bcrypt only. Payment credentials (card numbers/CVV) are **never** stored — only method/status/notes.
-- Server secrets (database password, JWT secret, Brevo key) live only in non-`NEXT_PUBLIC_*` env vars and are never exposed to the browser.
+- Server secrets (database password, JWT secret, SMTP password) live only in non-`NEXT_PUBLIC_*` env vars and are never exposed to the browser.

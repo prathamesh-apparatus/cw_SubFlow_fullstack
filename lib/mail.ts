@@ -1,7 +1,8 @@
-// Server-only: Brevo notification email — ported verbatim from the old NestJS
-// MailService (same branded HTML, same env keys). No BREVO_API_KEY → log + skip,
-// never throws. CTA now deep-links to the subscription drawer on All
-// Subscriptions (?open=<id>) since the standalone detail page no longer exists.
+// Server-only: notification email via Nodemailer (SMTP) — same branded HTML
+// as before. SMTP not configured → log + skip, never throws. CTA now
+// deep-links to the subscription drawer on All Subscriptions (?open=<id>)
+// since the standalone detail page no longer exists.
+import nodemailer, { type Transporter } from 'nodemailer';
 import { query } from './db';
 
 export interface NotificationSubInfo {
@@ -111,10 +112,28 @@ function buildHtml(notification: any, sub: NotificationSubInfo | null): string {
 </body></html>`;
 }
 
+// Lazily-initialised singleton transporter, built once from the SMTP_* env
+// vars. Returns null when SMTP is not configured (missing host/user/pass).
+let transporter: Transporter | null = null;
+let transporterChecked = false;
+
+function getTransporter(): Transporter | null {
+  if (transporterChecked) return transporter;
+  transporterChecked = true;
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : port === 465;
+  transporter = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+  return transporter;
+}
+
 export async function sendNotificationEmail(notification: any, sub: NotificationSubInfo | null): Promise<void> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    console.log('[mail] BREVO_API_KEY not configured — skipping notification email');
+  const transport = getTransporter();
+  if (!transport) {
+    console.log('[mail] SMTP not configured — skipping email');
     return;
   }
   try {
@@ -123,23 +142,15 @@ export async function sendNotificationEmail(notification: any, sub: Notification
       console.log('[mail] No admin email found — skipping notification email');
       return;
     }
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'prathameshingle72@gmail.com';
-    const senderName = process.env.BREVO_SENDER_NAME || 'SubFlow';
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({
-        sender: { name: senderName, email: senderEmail },
-        to: [{ email: to }],
-        subject: `${notification.title} · SubFlow`,
-        htmlContent: buildHtml(notification, sub),
-      }),
+    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+    const fromName = process.env.SMTP_FROM_NAME || 'SubFlow';
+    await transport.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject: `${notification.title} · SubFlow`,
+      html: buildHtml(notification, sub),
     });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      console.error(`[mail] Brevo send failed (${res.status}): ${text.slice(0, 200)}`);
-    }
   } catch (e: any) {
-    console.error('[mail] Brevo send error:', e?.message || e);
+    console.error('[mail] SMTP send error:', e?.message || e);
   }
 }
