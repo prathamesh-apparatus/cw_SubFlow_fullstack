@@ -4,7 +4,7 @@ import { Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { Pagination } from '@/components/ui/pagination';
 import { DomainTable } from '@/components/domains/domain-table';
@@ -60,7 +60,8 @@ export default function DomainsPage() {
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Add Domain</Button>
       </div>
 
-      <div className="space-y-3 rounded-[1.25rem] border bg-card p-3 shadow-sm">
+      <Card className="overflow-hidden">
+      <div className="space-y-3 p-4">
         <div className="relative w-full"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search domain name…" value={f.search} onChange={(e) => set('search', e.target.value)} className="h-10 rounded-full border-transparent bg-secondary/70 pl-11 shadow-none focus:bg-card" /></div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
           <Select className="h-9 rounded-full text-[13px]" value={f.type} onChange={(e) => set('type', e.target.value)}><option value="">Type: All</option><option value="internal">Internal</option><option value="external">External</option></Select>
@@ -71,9 +72,10 @@ export default function DomainsPage() {
           <Select className="h-9 rounded-full text-[13px]" value={f.sort} onChange={(e) => set('sort', e.target.value)}><option value="expiry_asc">Expiry: Soonest</option><option value="expiry_desc">Expiry: Latest</option><option value="cost_desc">Cost: High → Low</option><option value="cost_asc">Cost: Low → High</option><option value="name_asc">Name: A → Z</option><option value="name_desc">Name: Z → A</option><option value="created_desc">Newest</option></Select>
         </div>
       </div>
-      <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{total} domain(s)</p><Button variant="ghost" size="sm" onClick={clear}><X className="h-4 w-4" /> Clear all filters</Button></div>
-      <Card className="overflow-hidden"><CardContent className="p-0">{loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <DomainTable items={items} onDelete={setDeleting} onView={(d) => setDrawer({ id: d.id, mode: 'view' })} onEdit={(d) => setDrawer({ id: d.id, mode: 'edit' })} />}</CardContent></Card>
-      <Pagination page={Number(f.page)} totalPages={totalPages} alwaysShow onPageChange={(p) => set('page', String(p))} />
+      <div className="flex items-center justify-between border-t px-4 py-2"><p className="text-sm text-muted-foreground">{total} domain(s)</p><Button variant="ghost" size="sm" onClick={clear}><X className="h-4 w-4" /> Clear all filters</Button></div>
+      {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <DomainTable items={items} onDelete={setDeleting} onView={(d) => setDrawer({ id: d.id, mode: 'view' })} onEdit={(d) => setDrawer({ id: d.id, mode: 'edit' })} />}
+      <div className="border-t px-4 py-3 [&>div]:mt-0"><Pagination page={Number(f.page)} totalPages={totalPages} alwaysShow onPageChange={(p) => set('page', String(p))} /></div>
+      </Card>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} loading={delLoading} title="Delete domain?" description={`Delete "${deleting?.domain_name}" permanently? This cannot be undone.`} />
       <DomainDrawer domainId={drawer?.id ?? null} initialMode={drawer?.mode ?? 'view'} createOpen={creating} onClose={() => { setDrawer(null); setCreating(false); }} onChanged={onChanged} />
     </div>

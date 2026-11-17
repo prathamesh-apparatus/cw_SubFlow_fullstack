@@ -6,8 +6,9 @@ import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/dialog';
+import { Pagination } from '@/components/ui/pagination';
 import { SubscriptionTable } from '@/components/subscriptions/subscription-table';
 import { SubscriptionDrawer } from '@/components/subscriptions/subscription-drawer';
 import { subscriptionService } from '@/services/subscription.service';
@@ -42,7 +43,8 @@ function Inner() {
         <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-medium tracking-tight text-foreground">All Subscriptions</h2><p className="mt-1 text-sm text-muted-foreground">Every plan across every team, in one place.</p></div>
         <Link href="/dashboard/subscriptions/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Subscription</Button></Link>
       </div>
-      <div className="space-y-3 rounded-[1.25rem] border bg-card p-3 shadow-sm">
+      <Card className="overflow-hidden">
+      <div className="space-y-3 p-4">
         <div className="relative w-full"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search name or account email…" value={f.search} onChange={(e) => set('search', e.target.value)} className="h-10 rounded-full border-transparent bg-secondary/70 pl-11 shadow-none focus:bg-card" /></div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
         <Select className="h-9 rounded-full text-[13px]" value={f.category_id} onChange={(e) => set('category_id', e.target.value)}><option value="">All Categories</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select>
@@ -53,9 +55,10 @@ function Inner() {
         <Select className="h-9 rounded-full text-[13px]" value={f.sort} onChange={(e) => set('sort', e.target.value)}><option value="created_desc">Newest</option><option value="price_desc">Price: High → Low</option><option value="price_asc">Price: Low → High</option><option value="renewal_asc">Renewal: Soonest</option><option value="renewal_desc">Renewal: Latest</option></Select>
         </div>
       </div>
-      <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{total} subscription(s)</p></div>
-      <Card className="overflow-hidden"><CardContent className="p-0">{loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} onView={(s) => setDrawer({ id: s.id, mode: 'view' })} onEdit={(s) => setDrawer({ id: s.id, mode: 'edit' })} />}</CardContent></Card>
-      <div className="flex items-center justify-between"><Button variant="outline" size="sm" disabled={Number(f.page) <= 1} onClick={() => set('page', String(Number(f.page) - 1))}>Previous</Button><span className="text-sm text-muted-foreground">Page {f.page} of {totalPages}</span><Button variant="outline" size="sm" disabled={Number(f.page) >= totalPages} onClick={() => set('page', String(Number(f.page) + 1))}>Next</Button></div>
+      <div className="flex items-center justify-between border-t px-4 py-2"><p className="text-sm text-muted-foreground">{total} subscription(s)</p></div>
+      {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} onView={(s) => setDrawer({ id: s.id, mode: 'view' })} onEdit={(s) => setDrawer({ id: s.id, mode: 'edit' })} />}
+      <div className="border-t px-4 py-3 [&>div]:mt-0"><Pagination page={Number(f.page)} totalPages={totalPages} alwaysShow onPageChange={(p) => set('page', String(p))} /></div>
+      </Card>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} loading={delLoading} title="Delete subscription?" description={`Delete "${deleting?.name}" permanently? This cannot be undone.`} />
       <SubscriptionDrawer subscriptionId={drawer?.id ?? null} initialMode={drawer?.mode ?? 'view'} onClose={() => setDrawer(null)} onChanged={load} />
     </div>
