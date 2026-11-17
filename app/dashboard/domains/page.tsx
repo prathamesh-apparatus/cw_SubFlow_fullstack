@@ -10,9 +10,8 @@ import { Pagination } from '@/components/ui/pagination';
 import { DomainTable } from '@/components/domains/domain-table';
 import { DomainDrawer } from '@/components/domains/domain-drawer';
 import { domainsService } from '@/services/domains.service';
-import { formatCurrency } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import type { Domain, DomainFacets, DomainStatistics } from '@/types';
+import type { Domain, DomainFacets } from '@/types';
 export const dynamic = 'force-dynamic';
 
 const SORT_MAP: Record<string, { sort: string; order: string }> = {
@@ -28,8 +27,6 @@ const SORT_MAP: Record<string, { sort: string; order: string }> = {
 export default function DomainsPage() {
   const [items, setItems] = useState<Domain[]>([]);
   const [total, setTotal] = useState(0); const [totalPages, setTotalPages] = useState(1); const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<DomainStatistics | null>(null);
-  const [upcoming, setUpcoming] = useState<Domain[]>([]); const [expiredList, setExpiredList] = useState<Domain[]>([]);
   const [facets, setFacets] = useState<DomainFacets>({ projects: [], registrars: [], managers: [] });
   const [deleting, setDeleting] = useState<Domain | null>(null); const [delLoading, setDelLoading] = useState(false);
   const [drawer, setDrawer] = useState<{ id: string; mode: 'view' | 'edit' } | null>(null);
@@ -47,26 +44,14 @@ export default function DomainsPage() {
   }, [f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
-  const loadSummary = useCallback(() => {
-    domainsService.statistics().then(setStats).catch(() => {});
-    domainsService.upcoming().then(setUpcoming).catch(() => {});
-    domainsService.expired().then(setExpiredList).catch(() => {});
+  const loadFacets = useCallback(() => {
     domainsService.facets().then(setFacets).catch(() => {});
   }, []);
-  useEffect(() => { loadSummary(); }, [loadSummary]);
+  useEffect(() => { loadFacets(); }, [loadFacets]);
 
   const clear = () => setF({ search: '', type: '', project: '', registrar: '', manager: '', status: '', sort: 'expiry_asc', page: '1', limit: '10' });
-  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await domainsService.remove(deleting.id); toast.success('Domain deleted'); setDeleting(null); load(); loadSummary(); } catch (e: any) { toast.error(e.message); } finally { setDelLoading(false); } };
-  const onChanged = () => { load(); loadSummary(); };
-
-  const within = (days: number) => upcoming.filter((d) => (d.days_remaining ?? 999) <= days).length;
-  const summary = [
-    { label: 'Total Domains', value: stats?.total ?? total },
-    { label: 'Expiring ≤ 7 days', value: within(7) },
-    { label: 'Expiring ≤ 15 days', value: within(15) },
-    { label: 'Expiring ≤ 30 days', value: upcoming.length },
-    { label: 'Expired', value: expiredList.length },
-  ];
+  const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await domainsService.remove(deleting.id); toast.success('Domain deleted'); setDeleting(null); load(); loadFacets(); } catch (e: any) { toast.error(e.message); } finally { setDelLoading(false); } };
+  const onChanged = () => { load(); loadFacets(); };
 
   return (
     <div className="space-y-5">
@@ -74,42 +59,6 @@ export default function DomainsPage() {
         <div><p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Management</p><h2 className="mt-1.5 text-xl font-medium tracking-tight text-foreground">Domains</h2><p className="mt-1 text-sm text-muted-foreground">Every organisation domain — where it was bought, who manages it, and when it expires.</p></div>
         <Button className="w-full sm:w-auto" onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Add Domain</Button>
       </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-        {summary.map((s) => (
-          <div key={s.label} className="rounded-[1.25rem] border bg-card px-4 py-3 shadow-sm">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-lg font-medium leading-none text-foreground">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <Card>
-        <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
-          <div>
-            <p className="text-[13px] font-medium text-foreground">Cost by type</p>
-            <div className="mt-2 divide-y divide-border/60">
-              {!stats || stats.byType.length === 0 ? <p className="py-2 text-[13px] text-muted-foreground">No domain costs yet.</p> : stats.byType.map((r) => (
-                <div key={r.domainType + r.currency} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-                  <span className="capitalize text-muted-foreground">{r.domainType} · {r.currency} <span className="text-xs">({r.count})</span></span>
-                  <span className="text-right font-medium text-foreground">Purchase {formatCurrency(r.totalPurchase, r.currency)} · Renewal {formatCurrency(r.totalRenewal, r.currency)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-[13px] font-medium text-foreground">Cost by project</p>
-            <div className="mt-2 divide-y divide-border/60">
-              {!stats || stats.byProject.length === 0 ? <p className="py-2 text-[13px] text-muted-foreground">No domain costs yet.</p> : stats.byProject.map((r) => (
-                <div key={r.projectName + r.currency} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-                  <span className="text-muted-foreground">{r.projectName} · {r.currency} <span className="text-xs">({r.count})</span></span>
-                  <span className="text-right font-medium text-foreground">Purchase {formatCurrency(r.totalPurchase, r.currency)} · Renewal {formatCurrency(r.totalRenewal, r.currency)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="space-y-3 rounded-[1.25rem] border bg-card p-3 shadow-sm">
         <div className="relative w-full"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input placeholder="Search domain name…" value={f.search} onChange={(e) => set('search', e.target.value)} className="h-10 rounded-full border-transparent bg-secondary/70 pl-11 shadow-none focus:bg-card" /></div>

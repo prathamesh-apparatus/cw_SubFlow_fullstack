@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw, Plus } from 'lucide-react';
+import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw, Plus, CirclePause, FolderOpen, Globe, ShieldCheck, AlarmClock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,17 +28,13 @@ export default function DashboardPage() {
   useEffect(() => { domainsService.statistics().then(setDomainStats).catch(() => {}); }, []);
   const onRefresh = async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } };
   if (loading) return <p className="py-16 text-center text-muted-foreground">Loading dashboard…</p>;
-  const overviewStats = [
-    { label: 'Total Categories', value: overview?.total_categories ?? 0, sub: 'Organised by team' },
-    { label: 'Total Subscriptions', value: overview?.total_subscriptions ?? 0, sub: 'All tracked plans' },
-    { label: 'Active Subscriptions', value: overview?.active_subscriptions ?? 0, sub: 'Currently running' },
-    { label: 'Inactive Subscriptions', value: overview?.inactive_subscriptions ?? 0, sub: 'Paused or ended' },
-  ];
-  const domainOverviewStats = [
-    { label: 'Total Domains', value: domainStats?.total ?? 0, sub: 'All registered domains' },
-    { label: 'Active Domains', value: domainStats?.active ?? 0, sub: 'Currently active' },
-    { label: 'Expired Domains', value: domainStats?.expired ?? 0, sub: 'Past their expiry date' },
-    { label: 'Domains Expiring Soon', value: domainStats?.expiringSoon ?? 0, sub: 'Within the next 30 days' },
+  const statGrid = [
+    { label: 'Total Subscriptions', value: overview?.total_subscriptions ?? 0, sub: `${overview?.active_subscriptions ?? 0} active`, icon: CreditCard, iconTint: 'bg-sky-100 text-sky-700' },
+    { label: 'Inactive Subscriptions', value: overview?.inactive_subscriptions ?? 0, sub: 'Paused or ended', icon: CirclePause, iconTint: 'bg-slate-100 text-slate-600' },
+    { label: 'Total Categories', value: overview?.total_categories ?? 0, sub: 'Organised by team', icon: FolderOpen, iconTint: 'bg-violet-100 text-violet-700' },
+    { label: 'Total Domains', value: domainStats ? domainStats.total : '—', sub: domainStats ? `${domainStats.internal} internal · ${domainStats.external} external` : '—', icon: Globe, iconTint: 'bg-emerald-100 text-emerald-700' },
+    { label: 'Active Domains', value: domainStats ? domainStats.active : '—', sub: domainStats ? `${domainStats.expired} expired` : '—', icon: ShieldCheck, iconTint: 'bg-teal-100 text-teal-700' },
+    { label: 'Domains Expiring Soon', value: domainStats ? domainStats.expiringSoon : '—', sub: 'Within the next 30 days', icon: AlarmClock, iconTint: 'bg-amber-100 text-amber-700' },
   ];
   const miniCards = [
     { label: 'Monthly Expenses', value: formatCurrency(overview?.monthly_recurring || 0), sub: 'Per month, normalised', icon: IndianRupee, tint: 'bg-gradient-to-br from-white to-sky-50', iconTint: 'bg-sky-100 text-sky-700' },
@@ -48,7 +44,7 @@ export default function DashboardPage() {
   ];
   const renewalList: Subscription[] = renewals ? (tab === 7 ? renewals.within7 : tab === 15 ? renewals.within15 : renewals.within30) : [];
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[1200px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />SubFlow Overview</p>
@@ -59,39 +55,6 @@ export default function DashboardPage() {
           <Link href="/dashboard/subscriptions/new"><Button size="sm"><Plus className="h-3.5 w-3.5" /> Add Subscription</Button></Link>
         </div>
       </div>
-
-      <Card>
-        <CardHeader className="pb-1"><CardTitle>Overview</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
-            {overviewStats.map((s, i) => (
-              <div key={s.label} className={cn(i > 0 && 'lg:border-l lg:pl-8')}>
-                <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                <p className="mt-2 text-2xl font-medium leading-none tracking-tight text-foreground">{s.value}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{s.sub}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-border/60 pt-8 lg:grid-cols-4">
-            {domainOverviewStats.map((s, i) => (
-              <div key={s.label} className={cn(i > 0 && 'lg:border-l lg:pl-8')}>
-                <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
-                <p className="mt-2 text-2xl font-medium leading-none tracking-tight text-foreground">{s.value}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{s.sub}</p>
-              </div>
-            ))}
-          </div>
-          {domainStats && domainStats.costs.length > 0 && (
-            <div className="mt-6 space-y-1 border-t border-border/60 pt-4">
-              {domainStats.costs.map((c) => (
-                <p key={c.currency} className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Domains ({c.currency})</span> — Purchase {formatCurrency(c.totalPurchase, c.currency)} · Renewal {formatCurrency(c.totalRenewal, c.currency)} · Yearly {formatCurrency(c.yearlyCost, c.currency)}
-                </p>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {miniCards.map((c) => { const Icon = c.icon; return (
@@ -107,6 +70,35 @@ export default function DashboardPage() {
           </Card>
         ); })}
       </div>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {statGrid.map((s) => { const Icon = s.icon; return (
+          <div key={s.label} className="rounded-2xl border bg-card p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{s.label}</p>
+              <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', s.iconTint)}><Icon className="h-3.5 w-3.5" /></span>
+            </div>
+            <p className="mt-2 text-xl font-medium leading-none tracking-tight text-foreground">{s.value}</p>
+            <p className="mt-1.5 truncate text-xs text-muted-foreground">{s.sub}</p>
+          </div>
+        ); })}
+      </div>
+
+      {domainStats && domainStats.costs.length > 0 && (
+        <Card>
+          <CardHeader className="pb-1"><CardTitle>Domain Costs</CardTitle><p className="text-sm text-muted-foreground">Totals per currency — currencies are never combined</p></CardHeader>
+          <CardContent>
+            <div className="divide-y divide-border/60">
+              {domainStats.costs.map((c) => (
+                <div key={c.currency} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-sm">
+                  <span className="font-medium text-foreground">{c.currency}</span>
+                  <span className="text-muted-foreground">Purchase <span className="font-medium text-foreground">{formatCurrency(c.totalPurchase, c.currency)}</span> · Renewal <span className="font-medium text-foreground">{formatCurrency(c.totalRenewal, c.currency)}</span> · Yearly <span className="font-medium text-foreground">{formatCurrency(c.yearlyCost, c.currency)}</span></span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

@@ -2,7 +2,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search, X } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -35,7 +35,6 @@ function Inner() {
   const load = useCallback(() => { setLoading(true); const params: Record<string, string> = {}; Object.entries(f).forEach(([k, v]) => { if (v) params[k] = v; }); subscriptionService.list(params).then((r) => { setItems(r.items); setTotal(r.total); setTotalPages(r.totalPages); }).catch((e) => toast.error(e.message)).finally(() => setLoading(false)); }, [f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   useEffect(() => { categoryService.list().then(setCategories).catch(() => {}); }, []);
-  const clear = () => setF({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const onDelete = async () => { if (!deleting) return; setDelLoading(true); try { await subscriptionService.remove(deleting.id); toast.success('Subscription deleted'); setDeleting(null); load(); } catch (e: any) { toast.error(e.message); } finally { setDelLoading(false); } };
   return (
     <div className="space-y-5">
@@ -54,7 +53,7 @@ function Inner() {
         <Select className="h-9 rounded-full text-[13px]" value={f.sort} onChange={(e) => set('sort', e.target.value)}><option value="created_desc">Newest</option><option value="price_desc">Price: High → Low</option><option value="price_asc">Price: Low → High</option><option value="renewal_asc">Renewal: Soonest</option><option value="renewal_desc">Renewal: Latest</option></Select>
         </div>
       </div>
-      <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{total} subscription(s)</p><Button variant="ghost" size="sm" onClick={clear}><X className="h-4 w-4" /> Clear all filters</Button></div>
+      <div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{total} subscription(s)</p></div>
       <Card className="overflow-hidden"><CardContent className="p-0">{loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} onView={(s) => setDrawer({ id: s.id, mode: 'view' })} onEdit={(s) => setDrawer({ id: s.id, mode: 'edit' })} />}</CardContent></Card>
       <div className="flex items-center justify-between"><Button variant="outline" size="sm" disabled={Number(f.page) <= 1} onClick={() => set('page', String(Number(f.page) - 1))}>Previous</Button><span className="text-sm text-muted-foreground">Page {f.page} of {totalPages}</span><Button variant="outline" size="sm" disabled={Number(f.page) >= totalPages} onClick={() => set('page', String(Number(f.page) + 1))}>Next</Button></div>
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={onDelete} loading={delLoading} title="Delete subscription?" description={`Delete "${deleting?.name}" permanently? This cannot be undone.`} />
