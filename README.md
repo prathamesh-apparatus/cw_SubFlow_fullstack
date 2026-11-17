@@ -2,48 +2,46 @@
 
 A production-quality platform for a single Admin to manage all of an organisation's software/SaaS subscriptions, organised by team (categories), with recurring-expense analytics and renewal tracking.
 
-**Stack:** Next.js (App Router) + TypeScript + Tailwind CSS — **UI and API in one Next.js app, on one port** (route handlers under `frontend/app/api/`). PostgreSQL via the **native `pg` driver only — no ORM anywhere** (no Prisma / TypeORM / Sequelize / Drizzle). All SQL is raw, parameterized (`$1, $2, …`) and lives in `frontend/lib/` + `frontend/database/init/*.sql`. Docker is used for the database only.
+**Stack:** Next.js (App Router) + TypeScript + Tailwind CSS — **UI and API in one Next.js app, on one port** (route handlers under `app/api/`). PostgreSQL via the **native `pg` driver only — no ORM anywhere** (no Prisma / TypeORM / Sequelize / Drizzle). All SQL is raw, parameterized (`$1, $2, …`) and lives in `lib/` + `database/init/*.sql`. Docker is used for the database only.
 
 ## Project structure
 
 ```
-cw_SubFlow_fullstack/
+cw_SubFlow_fullstack/           # ONE flat Next.js project at the root — no frontend/backend folders
 ├── docker-compose.yml          # database only: postgres:16 (named volume postgres_data)
-└── frontend/                   # Next.js App Router — the whole app (.env lives here)
-    ├── app/                    # login, dashboard/* (categories, subscriptions, renewals, settings, notifications)
-    ├── app/api/                # API route handlers: auth, categories, subscriptions, dashboard, renewals, notifications, health
-    ├── components/             # layout (Sidebar/Header), ui (shadcn-style primitives), dashboard charts, subscription form (sections A–E)
-    ├── database/init/          # manual SQL schema, mounted to /docker-entrypoint-initdb.d
-    │   ├── 001_create_admins.sql        # pgcrypto + admins
-    │   ├── 002_create_categories.sql
-    │   ├── 003_create_subscriptions.sql # subscriptions + payment_history, CHECK constraints
-    │   ├── 004_create_indexes.sql
-    │   └── 005_notifications.sql
-    ├── lib/                    # api.ts (fetch client), validations (Zod), utils +
-    │                           #   server-only: db.ts (pg Pool), auth.ts (JWT/bcrypt), renewal.ts,
-    │                           #   categories.ts, subscriptions.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
-    ├── scripts/seed-admin.mjs  # admin seed (npm run seed)
-    ├── services/  types/  hooks/
-    └── app/globals.css         # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
+├── .env                        # the only env file (copy of .env.example, at the root)
+├── app/                        # login, dashboard/* (categories, subscriptions, renewals, settings, notifications)
+├── app/api/                    # API route handlers: auth, categories, subscriptions, dashboard, renewals, notifications, health
+├── components/                 # layout (Sidebar/Header), ui (shadcn-style primitives), dashboard charts, subscription form (sections A–E)
+├── database/init/              # manual SQL schema, mounted to /docker-entrypoint-initdb.d
+│   ├── 001_create_admins.sql        # pgcrypto + admins
+│   ├── 002_create_categories.sql
+│   ├── 003_create_subscriptions.sql # subscriptions + payment_history, CHECK constraints
+│   ├── 004_create_indexes.sql
+│   └── 005_notifications.sql
+├── lib/                        # api.ts (fetch client), validations (Zod), utils +
+│                               #   server-only: db.ts (pg Pool), auth.ts (JWT/bcrypt), renewal.ts,
+│                               #   categories.ts, subscriptions.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
+├── scripts/seed-admin.mjs      # admin seed (npm run seed)
+├── services/  types/  hooks/
+└── app/globals.css             # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
 ```
 
 ## Quick start
 
-There is **no root `.env`** — the only env file is `frontend/.env`.
+There is exactly **one env file: `.env` at the project root** (copy `.env.example`).
 **Docker runs just the database**; the **app (UI + API together) runs with npm** on a single port.
 
 ```powershell
 # 0. One-time: create the env file and set your values:
-cd frontend; Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD / BREVO_API_KEY
-cd ..
+Copy-Item .env.example .env   # edit DATABASE_PASSWORD / JWT_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD / BREVO_API_KEY
 
-# 1. Database — ONE Docker command (from the project root):
-docker compose --env-file frontend/.env up -d
+# 1. Database — ONE Docker command (from the project root; reads the root .env automatically):
+docker compose up -d
 #    Starts Postgres only (tables auto-created on first run). Your existing
 #    postgres_data volume is reused — no data is lost.
 
-# 2. App — npm (separate terminal):
-cd frontend
+# 2. App — npm (separate terminal, same root folder):
 npm i
 npm run dev                   # website + API on http://localhost:3000 (or 3001 if 3000 is busy)
 ```
@@ -58,7 +56,7 @@ There is **no public registration** — exactly one admin exists.
 - **Auto-seed:** on the first login attempt, if the `admins` table is empty, the admin is created automatically from those env vars (bcryptjs, cost 12) — no separate step needed.
 - Explicit seed (also how you change the password later): hashes with **bcryptjs (cost 12)** and upserts idempotently:
   ```bash
-  cd frontend && npm run seed
+  npm run seed
   ```
 - Login (`POST /api/auth/login`) sets an **HTTP-only cookie** `subflow_token` (JWT, HS256 via `jose`, 7-day expiry). `GET /api/auth/me` validates the session, `POST /api/auth/logout` clears it. Next.js middleware protects `/dashboard/*` and redirects to `/login`.
 - Existing password hashes from before the migration keep working — bcryptjs verifies standard bcrypt `$2b$` hashes.
@@ -67,13 +65,13 @@ There is **no public registration** — exactly one admin exists.
 
 ```bash
 # 1. Create the database, then apply schema in order:
-psql -d subflow -f frontend/database/init/001_create_admins.sql   # …002, 003, 004, 005
+psql -d subflow -f database/init/001_create_admins.sql   # …002, 003, 004, 005
 
 # 2. App (UI + API on one port)
-cd frontend && cp .env.example .env && npm install && npm run dev   # :3000
+cp .env.example .env && npm install && npm run dev   # :3000
 ```
 
-> Schema changes on an existing database: write a new numbered SQL file in `frontend/database/init/` and apply it manually with `psql` — there is intentionally **no ORM migration tool**.
+> Schema changes on an existing database: write a new numbered SQL file in `database/init/` and apply it manually with `psql` — there is intentionally **no ORM migration tool**.
 
 ## Recurring-expense normalization
 
@@ -100,7 +98,7 @@ Yearly recurring = monthly × 12. `total_amount = price + tax_amount` (computed 
 
 ## Styling
 
-All design tokens (colours, radius, sidebar, chart palette) are CSS variables in `frontend/app/globals.css`; `tailwind.config.ts` maps Tailwind utilities to those variables. Change a variable once — the entire site adapts.
+All design tokens (colours, radius, sidebar, chart palette) are CSS variables in `app/globals.css`; `tailwind.config.ts` maps Tailwind utilities to those variables. Change a variable once — the entire site adapts.
 
 ## Merging this branch into main
 

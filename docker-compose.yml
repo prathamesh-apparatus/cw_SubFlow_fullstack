@@ -1,8 +1,8 @@
 # SubFlow database ONLY. The app itself (UI + API) runs entirely in Next.js —
 # there is no separate backend service anymore.
-# Start the database with ONE command (from project root):  docker compose --env-file frontend/.env up -d
-# Then run the app:  cd frontend && npm i && npm run dev
-# No root .env — all env lives in frontend/.env.
+# Start the database with ONE command (from project root):  docker compose up -d
+# Then run the app from the same root folder:  npm i && npm run dev
+# All env lives in the root .env (Compose reads it automatically).
 services:
   postgres:
     image: postgres:16-alpine
@@ -16,7 +16,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./frontend/database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-subflow} -d ${DATABASE_NAME:-subflow}"]
       interval: 5s
