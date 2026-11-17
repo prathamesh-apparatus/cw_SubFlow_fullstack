@@ -6,6 +6,61 @@ import { ApiError } from './http';
 import { computeNextRenewal, toDateStr } from './renewal';
 import { fmtAmount, logActivity } from './notifications';
 
+// Subscription members ("Who can use this subscription") live in their own
+// table — see database/init/007_create_subscription_members.sql. Existing
+// database volumes never re-run the init scripts, so the same DDL is
+// bootstrapped lazily here (mirrors ensureDomainsTable in lib/domains.ts).
+let membersBootstrap: Promise<void> | null = null;
+
+export function ensureMembersTable(): Promise<void> {
+  if (!membersBootstrap) {
+    membersBootstrap = (async () => {
+      try {
+        await query(`CREATE TABLE IF NOT EXISTS subscription_members (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          subscription_id UUID NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          email TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`);
+        await query('CREATE INDEX IF NOT EXISTS idx_subscription_members_subscription ON subscription_members (subscription_id)');
+      } catch (e) {
+        console.error('[subscriptions] members table bootstrap failed:', e);
+      }
+    })();
+  }
+  return membersBootstrap;
+}
+
+interface MemberInput {
+  name: string;
+  email: string | null;
+}
+
+/**
+ * Sanitise the DTO `members` value (already shape-checked by the validation
+ * spec): trims fields, strips unknown keys and drops fully-empty entries.
+ * Returns undefined when the value is not an array (i.e. not provided).
+ */
+function cleanMembers(raw: any): MemberInput[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: MemberInput[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+    const email = typeof entry.email === 'string' ? entry.email.trim() : '';
+    if (!name && !email) continue;
+    out.push({ name, email: email || null });
+  }
+  return out;
+}
+
+async function insertMembers(run: (text: string, params: any[]) => Promise<any>, subscriptionId: string, members: MemberInput[]) {
+  for (const m of members) {
+    await run('INSERT INTO subscription_members (subscription_id, name, email) VALUES ($1,$2,$3)', [subscriptionId, m.name, m.email]);
+  }
+}
+
 const CYCLE_LABEL: Record<string, string> = {
   monthly: 'Monthly',
   quarterly: 'Quarterly',
@@ -74,6 +129,7 @@ function cols(dto: any, nextRenewal: string | null) {
 }
 
 export async function createSubscription(dto: any) {
+  await ensureMembersTable();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -95,6 +151,10 @@ export async function createSubscription(dto: any) {
         [sub.id, sub.total_amount, sub.currency, sub.last_payment_date, sub.payment_method, sub.payment_status],
       );
     }
+    const members = cleanMembers(dto.members);
+    if (members && members.length) {
+      await insertMembers((text, params) => client.query(text, params), sub.id, members);
+    }
     await client.query('COMMIT');
     const created = await findOneSubscription(sub.id);
     await logActivity(
@@ -113,6 +173,7 @@ export async function createSubscription(dto: any) {
 }
 
 export async function findAllSubscriptions(q: any = {}) {
+  await ensureMembersTable();
   const page = Math.max(1, parseInt(q.page || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(q.limit || '10', 10)));
   const where: string[] = [];
@@ -145,7 +206,7 @@ export async function findAllSubscriptions(q: any = {}) {
   const totalRes = await query(`SELECT COUNT(*)::int AS total FROM subscriptions s ${whereSql}`, params);
   const offset = (page - 1) * limit;
   const { rows } = await query(
-    `SELECT s.*, c.name AS category_name FROM subscriptions s JOIN categories c ON c.id=s.category_id ${whereSql} ORDER BY ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    `SELECT s.*, c.name AS category_name, (SELECT COUNT(*)::int FROM subscription_members m WHERE m.subscription_id = s.id) AS member_count FROM subscriptions s JOIN categories c ON c.id=s.category_id ${whereSql} ORDER BY ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, limit, offset],
   );
   return {
@@ -158,15 +219,21 @@ export async function findAllSubscriptions(q: any = {}) {
 }
 
 export async function findOneSubscription(id: string) {
+  await ensureMembersTable();
   const { rows } = await query(
     'SELECT s.*, c.name AS category_name FROM subscriptions s JOIN categories c ON c.id=s.category_id WHERE s.id=$1',
     [id],
   );
   if (!rows[0]) throw new ApiError(404, 'Subscription not found');
-  return rows[0];
+  const { rows: memberRows } = await query(
+    'SELECT id, name, email, created_at FROM subscription_members WHERE subscription_id=$1 ORDER BY created_at ASC',
+    [id],
+  );
+  return { ...rows[0], members: memberRows };
 }
 
 export async function updateSubscription(id: string, dto: any) {
+  await ensureMembersTable();
   const old = await findOneSubscription(id);
   const merged = { ...dto, auto_pay_enabled: dto.auto_pay_enabled !== undefined ? dto.auto_pay_enabled : old.auto_pay_enabled };
   const effStart = dto.start_date !== undefined ? toDateStr(dto.start_date) : toDateStr(old.start_date);
@@ -192,6 +259,13 @@ export async function updateSubscription(id: string, dto: any) {
       'INSERT INTO payment_history (subscription_id,amount,currency,payment_date,payment_method,payment_status) VALUES ($1,$2,$3,$4,$5,$6)',
       [sub.id, sub.total_amount, sub.currency, sub.last_payment_date, sub.payment_method, sub.payment_status],
     );
+  }
+  // Members use replace-all semantics, but only when the `members` key was
+  // actually sent — an update without it leaves the existing members alone.
+  if (dto.members !== undefined) {
+    const members = cleanMembers(dto.members) ?? [];
+    await query('DELETE FROM subscription_members WHERE subscription_id=$1', [id]);
+    if (members.length) await insertMembers(query, id, members);
   }
   const updated = await findOneSubscription(id);
   try {

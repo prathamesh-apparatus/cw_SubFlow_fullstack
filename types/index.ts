@@ -3,6 +3,7 @@ export interface Category { id: string; name: string; description?: string | nul
 export type BillingCycle = 'monthly' | 'quarterly' | 'half_yearly' | 'yearly' | 'custom';
 export type SubStatus = 'active' | 'inactive' | 'cancelled' | 'expired' | 'trial';
 export type PaymentStatus = 'paid' | 'pending' | 'failed';
+export interface SubscriptionMember { id?: string; name: string; email?: string | null; }
 export interface Subscription {
   id: string; category_id: string; category_name?: string; name: string; description?: string | null;
   website_url?: string | null; account_email: string; account_username?: string | null;
@@ -12,6 +13,7 @@ export interface Subscription {
   start_date?: string | null; last_payment_date?: string | null; next_renewal_date?: string | null; end_date?: string | null;
   renewal_reminder: boolean; reminder_days_before: number; status: SubStatus; auto_renewal_enabled: boolean;
   notes?: string | null; created_at: string; updated_at: string;
+  members?: SubscriptionMember[]; member_count?: number;
 }
 export interface Paginated<T> { items: T[]; total: number; page: number; limit: number; totalPages: number; }
 export type DomainType = 'internal' | 'external';

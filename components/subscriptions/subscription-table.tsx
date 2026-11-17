@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
 import type { Subscription } from '@/types';
@@ -29,7 +29,10 @@ export function SubscriptionTable({ items, onDelete, onView, onEdit }: { items: 
                 </div>
               </td>
               <td className={tdClass}>{s.category_name || '—'}</td>
-              <td className={tdClass}>{s.account_email}</td>
+              <td className={tdClass}>
+                <div>{s.account_email}</div>
+                {!!s.member_count && <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground"><Users className="h-3 w-3" /> Shared with {s.member_count} member{s.member_count === 1 ? '' : 's'}</p>}
+              </td>
               <td className={cn(tdClass, 'font-medium')}>{formatCurrency(s.total_amount, s.currency)}</td>
               <td className={tdClass}>{cycleLabel[s.billing_cycle] || s.billing_cycle}{s.billing_cycle === 'custom' && s.custom_billing_days ? ` (${s.custom_billing_days}d)` : ''}</td>
               <td className={tdClass}>{s.auto_pay_enabled ? <Badge>Yes</Badge> : <span className="text-muted-foreground">No</span>}</td>

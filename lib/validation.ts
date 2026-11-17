@@ -16,6 +16,7 @@ type Rule =
   | { kind: 'notEmpty' }
   | { kind: 'date' }
   | { kind: 'domain' }
+  | { kind: 'members' }
   | { kind: 'in'; values: (string | number)[] };
 
 interface FieldSpec {
@@ -72,6 +73,25 @@ function checkRule(field: string, value: any, rule: Rule): string | null {
       return typeof value === 'string' && DOMAIN_RE.test(value.trim())
         ? null
         : `${field} must be a valid domain name`;
+    case 'members': {
+      // Subscription members: array of { name, email? }, max 20 entries.
+      // Fully-empty entries are tolerated here (the service drops them); an
+      // entry carrying an email but no name is a hard error.
+      if (!Array.isArray(value)) return `${field} must be an array`;
+      if (value.length > 20) return `${field} must contain no more than 20 elements`;
+      for (const entry of value) {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return 'each member must be an object';
+        if (entry.name !== undefined && entry.name !== null && typeof entry.name !== 'string')
+          return 'member name must be a string';
+        if (entry.email !== undefined && entry.email !== null && typeof entry.email !== 'string')
+          return 'member email must be a string';
+        const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+        const email = typeof entry.email === 'string' ? entry.email.trim() : '';
+        if (email && !name) return 'Member name is required';
+        if (email && !EMAIL_RE.test(email)) return 'member email must be an email';
+      }
+      return null;
+    }
     case 'in':
       return rule.values.includes(value)
         ? null
@@ -161,6 +181,7 @@ export const subscriptionSpec: FieldSpec[] = [
   { name: 'status', optional: true, rules: [{ kind: 'in', values: ['active', 'inactive', 'cancelled', 'expired', 'trial'] }] },
   { name: 'auto_renewal_enabled', optional: true, rules: [{ kind: 'boolean' }] },
   { name: 'notes', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'members', optional: true, rules: [{ kind: 'members' }] },
 ];
 
 const domainFields: FieldSpec[] = [

@@ -111,6 +111,22 @@ export function SubscriptionDrawer({ subscriptionId, initialMode, onClose, onCha
                 <Row icon={Zap} label="Auto-pay" value={sub.auto_pay_enabled ? 'Yes' : 'No'} />
               </Section>
 
+              {sub.members !== undefined && (
+                <Section title="Shared with">
+                  {sub.members.length > 0 ? sub.members.map((m) => (
+                    <div key={m.id || m.name} className="flex items-center gap-3 px-4 py-2.5">
+                      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold', pastelFor(m.name))}>{m.name.charAt(0).toUpperCase()}</span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-foreground">{m.name}</p>
+                        {m.email && <p className="truncate text-xs text-muted-foreground">{m.email}</p>}
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="px-4 py-2.5 text-[13px] text-muted-foreground">Not shared — only the account holder</p>
+                  )}
+                </Section>
+              )}
+
               <Section title="Pricing & billing">
                 <Row icon={Tag} label="Price" value={formatCurrency(sub.price, sub.currency)} />
                 <Row icon={Receipt} label="Tax amount" value={formatCurrency(sub.tax_amount, sub.currency)} />

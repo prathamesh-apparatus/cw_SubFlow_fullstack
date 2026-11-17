@@ -19,7 +19,8 @@ cw_SubFlow_fullstack/           # ONE flat Next.js project at the root — no fr
 │   ├── 003_create_subscriptions.sql # subscriptions + payment_history, CHECK constraints
 │   ├── 004_create_indexes.sql
 │   ├── 005_notifications.sql
-│   └── 006_create_domains.sql       # domains (internal/external, purchase + management + expiry)
+│   ├── 006_create_domains.sql       # domains (internal/external, purchase + management + expiry)
+│   └── 007_create_subscription_members.sql # who can use each subscription (name + optional email)
 ├── lib/                        # api.ts (fetch client), validations (Zod), utils +
 │                               #   server-only: db.ts (pg Pool), auth.ts (JWT/bcrypt), renewal.ts,
 │                               #   categories.ts, subscriptions.ts, domains.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
@@ -66,7 +67,7 @@ There is **no public registration** — exactly one admin exists.
 
 ```bash
 # 1. Create the database, then apply schema in order:
-psql -d subflow -f database/init/001_create_admins.sql   # …002, 003, 004, 005, 006
+psql -d subflow -f database/init/001_create_admins.sql   # …002, 003, 004, 005, 006, 007
 
 # 2. App (UI + API on one port)
 cp .env.example .env && npm install && npm run dev   # :3000
@@ -97,6 +98,8 @@ Yearly recurring = monthly × 12. `total_amount = price + tax_amount` (computed 
 - Renewals page: grouped Overdue / 7 / 15 / 30 days.
 - Notifications: header bell + page; renewal overdue/upcoming and payment-failed alerts generated from live data, with optional Brevo email to the admin.
 - Settings: change email + change password (working, via `/api/auth/*`), real admin info from `/api/auth/me` + working logout.
+
+**Subscription members ("Who can use this subscription"):** a subscription's account is often shared by 2–3 team members, so each subscription can record who may use it — a list of members (name + optional email, max 20) stored in `subscription_members` (`database/init/007_create_subscription_members.sql`; `lib/subscriptions.ts` bootstraps the same DDL lazily for existing databases). The form's Section A has dynamic member rows; create/update accept a `members` array (updates replace the whole list, and only when the key is sent), `GET /api/subscriptions/:id` returns `members`, the list returns `member_count`, the details panel shows a "Shared with" section, and deleting a subscription cascades its members away.
 
 ## Domains Management module
 

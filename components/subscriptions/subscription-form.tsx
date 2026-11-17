@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
+import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,13 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // "Who can use this subscription" — kept in local state (not RHF) and merged
+  // into the payload on submit.
+  const [members, setMembers] = useState<{ name: string; email: string }[]>(() => (initial?.members || []).map((m) => ({ name: m.name, email: m.email || '' })));
+  const [memberError, setMemberError] = useState('');
+  const updateMember = (i: number, key: 'name' | 'email', value: string) => { setMemberError(''); setMembers((prev) => prev.map((m, idx) => (idx === i ? { ...m, [key]: value } : m))); };
+  const addMember = () => { setMemberError(''); setMembers((prev) => (prev.length >= 20 ? prev : [...prev, { name: '', email: '' }])); };
+  const removeMember = (i: number) => { setMemberError(''); setMembers((prev) => prev.filter((_, idx) => idx !== i)); };
   const form = useForm<SubscriptionFormValues>({ resolver: zodResolver(subscriptionSchema), defaultValues: initial ? { ...empty, ...initial, price: Number(initial.price), tax_amount: Number(initial.tax_amount), start_date: toDate(initial.start_date), end_date: toDate(initial.end_date), payment_method: initial.payment_method || '', description: initial.description || '', website_url: initial.website_url || '', account_username: initial.account_username || '', payment_notes: initial.payment_notes || '', notes: initial.notes || '' } as SubscriptionFormValues : { ...empty, category_id: defaultCategoryId || '' } });
   const { register, handleSubmit, watch, formState: { errors } } = form;
   const price = watch('price'); const tax = watch('tax_amount'); const cycle = watch('billing_cycle'); const currency = watch('currency');
@@ -29,8 +37,19 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
   const err = (m?: string) => m ? <p className="mt-1 text-xs text-destructive">{m}</p> : null;
   const field = (label: string, el: React.ReactNode, e?: string) => <div><Label>{label}</Label><div className="mt-1.5">{el}</div>{err(e)}</div>;
   const onSubmit = async (values: SubscriptionFormValues) => {
-    if (submitting) return; setSubmitting(true);
-    const payload: any = { ...values };
+    if (submitting) return;
+    // Clean + validate the member rows before anything is sent.
+    const cleanedMembers: { name: string; email: string | null }[] = [];
+    for (const m of members) {
+      const name = m.name.trim(); const email = m.email.trim();
+      if (!name && !email) continue;
+      if (!name) { setMemberError('Member name is required'); return; }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMemberError('Enter a valid email for each member'); return; }
+      cleanedMembers.push({ name, email: email || null });
+    }
+    setMemberError('');
+    setSubmitting(true);
+    const payload: any = { ...values, members: cleanedMembers };
     ['description','website_url','account_username','payment_method','payment_notes','notes','start_date','end_date'].forEach((k) => { if (!payload[k]) payload[k] = null; });
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
@@ -50,6 +69,23 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
         {field('Website URL', <Input {...register('website_url')} placeholder="https://…" />, errors.website_url?.message)}
         {field('Account Email *', <Input type="email" {...register('account_email')} placeholder="team@company.com" />, errors.account_email?.message)}
         {field('Account Username', <Input {...register('account_username')} placeholder="Optional" />)}
+        <div className="sm:col-span-2">
+          <Label>Who can use this subscription</Label>
+          <p className="mt-1 text-xs text-muted-foreground">Optional — add the team members who share this account.</p>
+          {members.length > 0 && (
+            <div className="mt-2.5 space-y-2">
+              {members.map((m, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input placeholder="Member name" value={m.name} onChange={(e) => updateMember(i, 'name', e.target.value)} className="flex-1" />
+                  <Input type="email" placeholder="Email (optional)" value={m.email} onChange={(e) => updateMember(i, 'email', e.target.value)} className="flex-1" />
+                  <button type="button" onClick={() => removeMember(i)} aria-label="Remove member" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-red-50 hover:text-red-600"><X className="h-4 w-4" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={addMember} disabled={members.length >= 20} className="mt-2.5"><Plus className="h-4 w-4" /> Add member</Button>
+          {err(memberError)}
+        </div>
       </>)}
       {section('B. Pricing Details', <>
         {field('Price *', <Input type="number" step="0.01" min="0" {...register('price')} />, errors.price?.message)}
