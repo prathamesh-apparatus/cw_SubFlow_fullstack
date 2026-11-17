@@ -35,7 +35,7 @@ export function SubscriptionForm({ initial, defaultCategoryId, onSaved, onCancel
     if (payload.billing_cycle !== 'custom') payload.custom_billing_days = null;
     try {
       if (initial) { const saved = await subscriptionService.update(initial.id, payload); toast.success('Subscription updated'); if (onSaved) { onSaved(saved); return; } router.push(`/dashboard/subscriptions?open=${initial.id}`); }
-      else { const created = await subscriptionService.create(payload); toast.success('Subscription created'); if (onSaved) { onSaved(created); return; } router.push(`/dashboard/subscriptions?open=${created.id}`); }
+      else { const created = await subscriptionService.create(payload); toast.success('Subscription created'); if (onSaved) { onSaved(created); return; } router.push('/dashboard/subscriptions'); }
       router.refresh();
     } catch (e: any) { toast.error(e.message || 'Failed to save subscription'); }
     finally { setSubmitting(false); }
