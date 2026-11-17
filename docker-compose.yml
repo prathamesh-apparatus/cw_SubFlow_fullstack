@@ -13,7 +13,10 @@ services:
       POSTGRES_USER: ${DATABASE_USER:-subflow}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-change_me_strong_password}
     ports:
-      - "5432:5432"
+      # Host port 5433 (not 5432): a locally installed PostgreSQL may already
+      # own 5432 on the host, and host-side connections must reach THIS
+      # container. The app uses DATABASE_PORT=5433 in .env to match.
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
