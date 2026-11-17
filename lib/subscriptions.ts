@@ -4,6 +4,42 @@
 import { pool, query } from './db';
 import { ApiError } from './http';
 import { computeNextRenewal, toDateStr } from './renewal';
+import { fmtAmount, logActivity } from './notifications';
+
+const CYCLE_LABEL: Record<string, string> = {
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  half_yearly: 'Half-Yearly',
+  yearly: 'Yearly',
+  custom: 'Custom',
+};
+
+function cycleLabel(s: any): string {
+  if (s?.billing_cycle === 'custom') return `Custom (${s.custom_billing_days ?? '—'} days)`;
+  return CYCLE_LABEL[s?.billing_cycle] || s?.billing_cycle || '';
+}
+
+function pretty(v: any): string {
+  const s = String(v ?? '');
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+/** Light diff of the key fields for the subscription_updated activity message. */
+function subscriptionDiff(oldSub: any, newSub: any): string {
+  const changes: string[] = [];
+  if (String(oldSub.name ?? '') !== String(newSub.name ?? '')) changes.push(`Name (${oldSub.name} → ${newSub.name})`);
+  if (String(oldSub.category_name ?? '') !== String(newSub.category_name ?? ''))
+    changes.push(`Category (${oldSub.category_name} → ${newSub.category_name})`);
+  if (Number(oldSub.total_amount) !== Number(newSub.total_amount))
+    changes.push(`Amount (${fmtAmount(oldSub.total_amount, oldSub.currency)} → ${fmtAmount(newSub.total_amount, newSub.currency)})`);
+  if (cycleLabel(oldSub) !== cycleLabel(newSub)) changes.push(`Cycle (${cycleLabel(oldSub)} → ${cycleLabel(newSub)})`);
+  if (String(oldSub.status ?? '') !== String(newSub.status ?? '')) changes.push(`Status (${pretty(oldSub.status)} → ${pretty(newSub.status)})`);
+  if (String(oldSub.payment_status ?? '') !== String(newSub.payment_status ?? ''))
+    changes.push(`Payment status (${pretty(oldSub.payment_status)} → ${pretty(newSub.payment_status)})`);
+  if (!!oldSub.auto_pay_enabled !== !!newSub.auto_pay_enabled)
+    changes.push(`Auto-pay (${oldSub.auto_pay_enabled ? 'Yes' : 'No'} → ${newSub.auto_pay_enabled ? 'Yes' : 'No'})`);
+  return changes.length ? `Changes: ${changes.join(', ')}` : 'details updated';
+}
 
 function cols(dto: any, nextRenewal: string | null) {
   const total = Number(dto.price || 0) + Number(dto.tax_amount || 0);
@@ -60,7 +96,14 @@ export async function createSubscription(dto: any) {
       );
     }
     await client.query('COMMIT');
-    return findOneSubscription(sub.id);
+    const created = await findOneSubscription(sub.id);
+    await logActivity(
+      'subscription_created',
+      'Subscription added',
+      `${created.name} added under ${created.category_name} — ${fmtAmount(created.total_amount, created.currency)} (${cycleLabel(created)})`,
+      created.id,
+    );
+    return created;
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
@@ -150,11 +193,20 @@ export async function updateSubscription(id: string, dto: any) {
       [sub.id, sub.total_amount, sub.currency, sub.last_payment_date, sub.payment_method, sub.payment_status],
     );
   }
-  return findOneSubscription(id);
+  const updated = await findOneSubscription(id);
+  try {
+    await logActivity('subscription_updated', 'Subscription updated', `${updated.name} — ${subscriptionDiff(old, updated)}`, updated.id);
+  } catch (e) {
+    console.error('[subscriptions] activity diff failed:', e);
+  }
+  return updated;
 }
 
 export async function removeSubscription(id: string) {
-  await findOneSubscription(id);
+  const existing = await findOneSubscription(id);
   await query('DELETE FROM subscriptions WHERE id=$1', [id]);
+  // subscription_id must be null here: the FK is ON DELETE CASCADE, so pointing
+  // at the just-deleted row would fail the insert / cascade the notification away.
+  await logActivity('subscription_deleted', 'Subscription deleted', `${existing.name} was deleted.`, null);
   return { deleted: true };
 }

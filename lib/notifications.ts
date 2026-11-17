@@ -54,7 +54,7 @@ function dateKey(d: any): string {
   return isNaN(date.getTime()) ? 'none' : date.toISOString().slice(0, 10);
 }
 
-function fmtAmount(amount: any, currency?: string | null): string {
+export function fmtAmount(amount: any, currency?: string | null): string {
   const n = Number(amount) || 0;
   try {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency || 'INR', maximumFractionDigits: 2 }).format(n);
@@ -121,6 +121,32 @@ export async function syncNotifications(): Promise<void> {
     }
   } catch (e) {
     console.error('[notifications] sync failed:', e);
+  }
+}
+
+/**
+ * Record an activity event (subscription/category CRUD, settings changes) as an
+ * in-app notification. NEVER throws — a failed log must not fail the caller's
+ * mutation — and NEVER emails (Brevo stays reserved for renewal/payment alerts).
+ * dedupe_key is UNIQUE, so each event gets a one-off key. subscription_id is
+ * nullable: delete events pass null because the FK is ON DELETE CASCADE.
+ */
+export async function logActivity(
+  type: string,
+  title: string,
+  message: string,
+  subscriptionId?: string | null,
+): Promise<void> {
+  try {
+    await ensureNotificationsTable();
+    const suffix = Math.random().toString(36).slice(2, 10);
+    const dedupeKey = `evt:${type}:${subscriptionId || 'none'}:${Date.now()}:${suffix}`;
+    await query(
+      'INSERT INTO notifications (subscription_id, type, title, message, dedupe_key) VALUES ($1,$2,$3,$4,$5)',
+      [subscriptionId ?? null, type, title, message, dedupeKey],
+    );
+  } catch (e) {
+    console.error('[notifications] activity log failed:', e);
   }
 }
 

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, BellOff, CalendarClock, CalendarX, CheckCheck, CreditCard, Loader2 } from 'lucide-react';
+import { Bell, BellOff, CalendarClock, CalendarX, CheckCheck, CreditCard, FolderEdit, FolderPlus, FolderX, Loader2, Mail, Pencil, PlusCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,14 @@ const META: Record<string, { icon: typeof Bell; cls: string }> = {
   renewal_overdue: { icon: CalendarX, cls: 'bg-red-50 text-red-600' },
   renewal_upcoming: { icon: CalendarClock, cls: 'bg-amber-50 text-amber-600' },
   payment_failed: { icon: CreditCard, cls: 'bg-red-50 text-red-600' },
+  subscription_created: { icon: PlusCircle, cls: 'bg-emerald-50 text-emerald-600' },
+  subscription_updated: { icon: Pencil, cls: 'bg-blue-50 text-blue-600' },
+  subscription_deleted: { icon: Trash2, cls: 'bg-rose-50 text-rose-600' },
+  category_created: { icon: FolderPlus, cls: 'bg-violet-50 text-violet-600' },
+  category_updated: { icon: FolderEdit, cls: 'bg-amber-50 text-amber-600' },
+  category_deleted: { icon: FolderX, cls: 'bg-rose-50 text-rose-600' },
+  settings_email_changed: { icon: Mail, cls: 'bg-slate-100 text-slate-600' },
+  settings_password_changed: { icon: ShieldCheck, cls: 'bg-slate-100 text-slate-600' },
 };
 
 function timeAgo(iso: string): string {

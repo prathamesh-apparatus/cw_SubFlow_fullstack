@@ -1,6 +1,7 @@
 // Server-only: categories — SQL ported verbatim from the old NestJS CategoriesService.
 import { query } from './db';
 import { ApiError } from './http';
+import { logActivity } from './notifications';
 
 const MONTHLY = `CASE s.billing_cycle WHEN 'monthly' THEN s.total_amount WHEN 'quarterly' THEN s.total_amount/3 WHEN 'half_yearly' THEN s.total_amount/6 WHEN 'yearly' THEN s.total_amount/12 WHEN 'custom' THEN s.total_amount * 30.4375 / NULLIF(s.custom_billing_days,0) ELSE s.total_amount END`;
 
@@ -34,6 +35,7 @@ export async function createCategory(dto: any) {
       dto.name,
       dto.description || null,
     ]);
+    await logActivity('category_created', 'Category added', `${rows[0].name} category was added.`);
     return rows[0];
   } catch (e: any) {
     if (e.code === '23505') throw new ApiError(409, 'Category with this name already exists');
@@ -42,16 +44,19 @@ export async function createCategory(dto: any) {
 }
 
 export async function updateCategory(id: string, dto: any) {
-  await findOneCategory(id);
+  const old = await findOneCategory(id);
   const { rows } = await query(
     'UPDATE categories SET name=COALESCE($2,name), description=COALESCE($3,description), updated_at=NOW() WHERE id=$1 RETURNING *',
     [id, dto.name ?? null, dto.description ?? null],
   );
+  const message =
+    old.name !== rows[0].name ? `Category renamed from ${old.name} to ${rows[0].name}.` : `${rows[0].name} — details updated`;
+  await logActivity('category_updated', 'Category updated', message);
   return rows[0];
 }
 
 export async function removeCategory(id: string) {
-  await findOneCategory(id);
+  const existing = await findOneCategory(id);
   const { rows } = await query('SELECT COUNT(*)::int AS count FROM subscriptions WHERE category_id=$1', [id]);
   if (rows[0].count > 0) {
     throw new ApiError(
@@ -60,5 +65,6 @@ export async function removeCategory(id: string) {
     );
   }
   await query('DELETE FROM categories WHERE id=$1', [id]);
+  await logActivity('category_deleted', 'Category deleted', `${existing.name} category was deleted.`);
   return { deleted: true };
 }

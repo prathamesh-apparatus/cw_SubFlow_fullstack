@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import type { NextRequest, NextResponse } from 'next/server';
 import { query } from './db';
 import { ApiError } from './http';
+import { logActivity } from './notifications';
 
 export const SESSION_COOKIE = 'subflow_token';
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
@@ -125,6 +126,7 @@ export async function changePassword(adminId: string, currentPassword: string, n
   }
   const hash = await hashPassword(newPassword);
   await query('UPDATE admins SET password_hash=$1 WHERE id=$2', [hash, adminId]);
+  await logActivity('settings_password_changed', 'Password changed', 'The admin account password was changed.');
   return true;
 }
 
@@ -133,6 +135,7 @@ export async function updateEmail(adminId: string, email: string) {
   if (existing.length) throw new ApiError(409, 'This email is already in use');
   const { rows } = await query('UPDATE admins SET email=$1 WHERE id=$2 RETURNING id, email', [email, adminId]);
   const admin = rows[0];
+  await logActivity('settings_email_changed', 'Email changed', `Admin email changed to ${admin.email}.`);
   const token = await signAdminToken({ id: admin.id, email: admin.email });
   return { admin: { id: admin.id, email: admin.email }, token };
 }

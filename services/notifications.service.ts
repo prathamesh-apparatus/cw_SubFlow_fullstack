@@ -2,7 +2,19 @@ import { api } from '@/lib/api';
 export interface NotificationItem {
   id: string;
   subscription_id: string | null;
-  type: 'renewal_overdue' | 'renewal_upcoming' | 'payment_failed' | string;
+  type:
+    | 'renewal_overdue'
+    | 'renewal_upcoming'
+    | 'payment_failed'
+    | 'subscription_created'
+    | 'subscription_updated'
+    | 'subscription_deleted'
+    | 'category_created'
+    | 'category_updated'
+    | 'category_deleted'
+    | 'settings_email_changed'
+    | 'settings_password_changed'
+    | string;
   title: string;
   message: string;
   dedupe_key: string;
