@@ -7,3 +7,6 @@ build/
 coverage/
 *.log
 .DS_Store
+
+# TypeScript incremental build info
+*.tsbuildinfo
