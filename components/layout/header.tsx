@@ -7,6 +7,7 @@ import { notificationsService } from '@/services/notifications.service';
 const segmentLabels: Record<string, string> = {
   categories: 'Categories',
   subscriptions: 'All Subscriptions',
+  domains: 'Domains',
   renewals: 'Upcoming Renewals',
   notifications: 'Notifications',
   settings: 'Settings',

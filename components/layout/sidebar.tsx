@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FolderOpen, CreditCard, CalendarClock, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, CreditCard, Globe, CalendarClock, Settings, LogOut, X } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { authService } from '@/services/auth.service';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ const links = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/categories', label: 'Categories', icon: FolderOpen },
   { href: '/dashboard/subscriptions', label: 'All Subscriptions', icon: CreditCard },
+  { href: '/dashboard/domains', label: 'Domains', icon: Globe },
   { href: '/dashboard/renewals', label: 'Upcoming Renewals', icon: CalendarClock },
 ];
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {

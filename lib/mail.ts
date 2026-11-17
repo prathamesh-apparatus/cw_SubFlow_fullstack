@@ -6,7 +6,9 @@ import { query } from './db';
 
 export interface NotificationSubInfo {
   name: string;
+  kind?: string;
   category_name?: string | null;
+  managed_by?: string | null;
   total_amount?: number | string | null;
   currency?: string | null;
   next_renewal_date?: string | Date | null;
@@ -17,6 +19,8 @@ const BADGES: Record<string, { label: string; bg: string; color: string }> = {
   renewal_overdue: { label: 'Overdue', bg: '#FEF2F2', color: '#DC2626' },
   renewal_upcoming: { label: 'Renewing soon', bg: '#FFFBEB', color: '#D97706' },
   payment_failed: { label: 'Payment failed', bg: '#FEF2F2', color: '#DC2626' },
+  domain_expiry_upcoming: { label: 'Expiring soon', bg: '#FFFBEB', color: '#D97706' },
+  domain_expired: { label: 'Expired', bg: '#FEF2F2', color: '#DC2626' },
 };
 
 function esc(v: unknown): string {
@@ -51,16 +55,27 @@ async function adminEmail(): Promise<string | null> {
 function buildHtml(notification: any, sub: NotificationSubInfo | null): string {
   const badge = BADGES[notification.type] || { label: 'Notification', bg: '#F0EDE4', color: '#57534E' };
   const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const isDomain = typeof notification.type === 'string' && notification.type.startsWith('domain_');
   const cta = notification.subscription_id
     ? `${frontendUrl}/dashboard/subscriptions?open=${notification.subscription_id}`
-    : `${frontendUrl}/dashboard/notifications`;
+    : isDomain
+      ? `${frontendUrl}/dashboard/domains`
+      : `${frontendUrl}/dashboard/notifications`;
   const rows: [string, string][] = [];
   if (sub) {
-    rows.push(['Subscription', sub.name]);
-    if (sub.category_name) rows.push(['Category', sub.category_name]);
-    if (sub.total_amount !== null && sub.total_amount !== undefined) rows.push(['Amount', fmtAmount(sub.total_amount, sub.currency)]);
-    if (sub.next_renewal_date) rows.push(['Renewal date', fmtDate(sub.next_renewal_date)]);
-    if (sub.status) rows.push(['Status', sub.status.charAt(0).toUpperCase() + sub.status.slice(1)]);
+    if (sub.kind === 'domain') {
+      rows.push(['Domain', sub.name]);
+      if (sub.managed_by) rows.push(['Managed by', sub.managed_by]);
+      if (sub.total_amount !== null && sub.total_amount !== undefined) rows.push(['Renewal cost', fmtAmount(sub.total_amount, sub.currency)]);
+      if (sub.next_renewal_date) rows.push(['Expiry date', fmtDate(sub.next_renewal_date)]);
+      if (sub.status) rows.push(['Status', sub.status.charAt(0).toUpperCase() + sub.status.slice(1)]);
+    } else {
+      rows.push(['Subscription', sub.name]);
+      if (sub.category_name) rows.push(['Category', sub.category_name]);
+      if (sub.total_amount !== null && sub.total_amount !== undefined) rows.push(['Amount', fmtAmount(sub.total_amount, sub.currency)]);
+      if (sub.next_renewal_date) rows.push(['Renewal date', fmtDate(sub.next_renewal_date)]);
+      if (sub.status) rows.push(['Status', sub.status.charAt(0).toUpperCase() + sub.status.slice(1)]);
+    }
   }
   const detailRows = rows
     .map(

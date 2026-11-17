@@ -33,3 +33,32 @@ export const subscriptionSchema = z.object({
 export type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 export type CategoryFormValues = z.infer<typeof categorySchema>;
 export type LoginFormValues = z.infer<typeof loginSchema>;
+const DOMAIN_NAME_RE = /^(?=.{1,253}$)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+export const domainSchema = z.object({
+  domain_name: z.string().min(1, 'Domain name is required').regex(DOMAIN_NAME_RE, 'Enter a valid domain name'),
+  domain_type: z.enum(['internal','external']),
+  description: z.string().optional().or(z.literal('')),
+  project_name: z.string().optional().or(z.literal('')),
+  purchased_from: z.string().optional().or(z.literal('')),
+  purchase_date: z.string().optional().or(z.literal('')),
+  purchase_cost: z.number().min(0, 'Purchase cost cannot be negative').nullable().optional(),
+  currency: z.string().min(1),
+  billing_cycle: z.enum(['monthly','yearly','custom']),
+  custom_billing_days: z.number().int().positive().nullable().optional(),
+  invoice_reference: z.string().optional().or(z.literal('')),
+  managed_by: z.string().optional().or(z.literal('')),
+  management_platform: z.string().optional().or(z.literal('')),
+  account_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  responsible_person: z.string().optional().or(z.literal('')),
+  nameservers: z.string().optional().or(z.literal('')),
+  registration_date: z.string().optional().or(z.literal('')),
+  expiry_date: z.string().optional().or(z.literal('')),
+  next_renewal_date: z.string().optional().or(z.literal('')),
+  renewal_cost: z.number().min(0, 'Renewal cost cannot be negative').nullable().optional(),
+  auto_renewal_enabled: z.boolean(),
+  renewal_reminder_enabled: z.boolean(),
+  reminder_days_before: z.coerce.number().refine((v) => [3,7,15,30].includes(v), { message: 'Select a reminder period' }),
+  status: z.enum(['active','inactive','expired','pending','cancelled']),
+  notes: z.string().optional().or(z.literal('')),
+}).refine((d) => d.billing_cycle !== 'custom' || (d.custom_billing_days && d.custom_billing_days > 0), { message: 'Custom billing days required for custom cycle', path: ['custom_billing_days'] });
+export type DomainFormValues = z.infer<typeof domainSchema>;

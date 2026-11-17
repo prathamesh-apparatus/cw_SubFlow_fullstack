@@ -1,15 +1,16 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw, Plus } from 'lucide-react';
+import { CreditCard, IndianRupee, CalendarClock, Zap, TrendingUp, RefreshCw, Plus, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ExpensesChart, CategoryDonut } from '@/components/dashboard/charts';
 import { dashboardService } from '@/services/dashboard.service';
+import { domainsService } from '@/services/domains.service';
 import toast from 'react-hot-toast';
-import { cn, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
-import type { Overview, Subscription } from '@/types';
+import { cn, EXPIRY_BAND_CLS, expiryBand, expiryChipText, formatCurrency, formatDate, pastelFor } from '@/lib/utils';
+import type { DomainStatistics, Overview, Subscription } from '@/types';
 export const dynamic = 'force-dynamic';
 const cycleLabels: Record<string, string> = { monthly: 'Monthly', quarterly: 'Quarterly', half_yearly: 'Half-Yearly', yearly: 'Yearly', custom: 'Custom' };
 export default function DashboardPage() {
@@ -18,11 +19,13 @@ export default function DashboardPage() {
   const [breakdown, setBreakdown] = useState<any[]>([]);
   const [recent, setRecent] = useState<Subscription[]>([]);
   const [renewals, setRenewals] = useState<any>(null);
+  const [domainStats, setDomainStats] = useState<DomainStatistics | null>(null);
   const [tab, setTab] = useState<7 | 15 | 30>(30);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const load = useCallback(() => Promise.all([dashboardService.overview(), dashboardService.expenses(), dashboardService.breakdown(), dashboardService.recent(), dashboardService.renewalsGrouped()]).then(([o, e, b, r, g]) => { setOverview(o); setExpenses(e); setBreakdown(b); setRecent(r); setRenewals(g); }).catch((e) => toast.error(e.message || 'Failed to load dashboard — make sure the backend is running.')), []);
   useEffect(() => { load().finally(() => setLoading(false)); }, [load]);
+  useEffect(() => { domainsService.statistics().then(setDomainStats).catch(() => {}); }, []);
   const onRefresh = async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } };
   if (loading) return <p className="py-16 text-center text-muted-foreground">Loading dashboard…</p>;
   const overviewStats = [
@@ -152,6 +155,73 @@ export default function DashboardPage() {
               </table>
             </div>
           )}
+        </Card>
+      </div>
+
+      <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+        <div>
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Domains</p>
+          <h3 className="mt-1.5 text-lg font-medium tracking-tight text-foreground">Domain Overview</h3>
+        </div>
+        <Link href="/dashboard/domains" className="text-[13px] font-medium text-emerald-700 hover:underline">View all domains →</Link>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {[
+          { label: 'Total Domains', value: domainStats?.total ?? 0, sub: 'All registered domains' },
+          { label: 'Internal Domains', value: domainStats?.internal ?? 0, sub: 'Organisation-owned' },
+          { label: 'External Domains', value: domainStats?.external ?? 0, sub: 'Client / third-party' },
+          { label: 'Active Domains', value: domainStats?.active ?? 0, sub: 'Currently active' },
+          { label: 'Expired Domains', value: domainStats?.expired ?? 0, sub: 'Past their expiry date' },
+          { label: 'Expiring Soon', value: domainStats?.expiringSoon ?? 0, sub: 'Within the next 30 days' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="pt-5">
+              <p className="text-[13px] font-medium text-muted-foreground">{s.label}</p>
+              <p className="mt-2 text-xl font-medium tracking-tight text-foreground">{s.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{s.sub}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle>Domain Costs</CardTitle><p className="text-sm text-muted-foreground">Totals per currency — currencies are never combined</p></CardHeader>
+          <CardContent>
+            {!domainStats || domainStats.costs.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No domain costs yet.</p> : (
+              <div className="divide-y divide-border/70">
+                {domainStats.costs.map((c) => (
+                  <div key={c.currency} className="flex items-center justify-between gap-3 py-3 text-[13px]">
+                    <span className="font-medium text-foreground">{c.currency}</span>
+                    <span className="text-right text-muted-foreground">Purchase <span className="font-medium text-foreground">{formatCurrency(c.totalPurchase, c.currency)}</span> · Renewal <span className="font-medium text-foreground">{formatCurrency(c.totalRenewal, c.currency)}</span> · Yearly <span className="font-medium text-foreground">{formatCurrency(c.yearlyCost, c.currency)}</span></span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>Upcoming Domain Renewals</CardTitle><p className="text-sm text-muted-foreground">Next renewals and expiries, soonest first</p></CardHeader>
+          <CardContent>
+            {!domainStats || domainStats.upcomingRenewals.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No domain renewals in the next 60 days.</p> : (
+              <div className="divide-y divide-border/70">
+                {domainStats.upcomingRenewals.map((d) => (
+                  <div key={d.id} className="flex items-center gap-3.5 py-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground"><Globe className="h-4 w-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <Link href="/dashboard/domains" className="font-semibold text-foreground hover:underline">{d.domain_name}</Link>
+                      <p className="truncate text-xs text-muted-foreground">{d.project_name || 'No project'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[13px] font-medium text-foreground">{formatDate(d.next_renewal_date || d.expiry_date)}</p>
+                      <span className={cn('mt-0.5 inline-flex items-center rounded-full px-2 py-px text-[10px] font-medium ring-1 ring-inset', EXPIRY_BAND_CLS[expiryBand(d.days_remaining)])}>{expiryChipText(d.days_remaining)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
     </div>

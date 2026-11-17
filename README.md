@@ -10,18 +10,19 @@ A production-quality platform for a single Admin to manage all of an organisatio
 cw_SubFlow_fullstack/           # ONE flat Next.js project at the root — no frontend/backend folders
 ├── docker-compose.yml          # database only: postgres:16 (named volume postgres_data)
 ├── .env                        # the only env file (copy of .env.example, at the root)
-├── app/                        # login, dashboard/* (categories, subscriptions, renewals, settings, notifications)
-├── app/api/                    # API route handlers: auth, categories, subscriptions, dashboard, renewals, notifications, health
-├── components/                 # layout (Sidebar/Header), ui (shadcn-style primitives), dashboard charts, subscription form (sections A–E)
+├── app/                        # login, dashboard/* (categories, subscriptions, domains, renewals, settings, notifications)
+├── app/api/                    # API route handlers: auth, categories, subscriptions, domains, dashboard, renewals, notifications, health
+├── components/                 # layout (Sidebar/Header), ui (shadcn-style primitives), dashboard charts, subscription + domain forms/drawers
 ├── database/init/              # manual SQL schema, mounted to /docker-entrypoint-initdb.d
 │   ├── 001_create_admins.sql        # pgcrypto + admins
 │   ├── 002_create_categories.sql
 │   ├── 003_create_subscriptions.sql # subscriptions + payment_history, CHECK constraints
 │   ├── 004_create_indexes.sql
-│   └── 005_notifications.sql
+│   ├── 005_notifications.sql
+│   └── 006_create_domains.sql       # domains (internal/external, purchase + management + expiry)
 ├── lib/                        # api.ts (fetch client), validations (Zod), utils +
 │                               #   server-only: db.ts (pg Pool), auth.ts (JWT/bcrypt), renewal.ts,
-│                               #   categories.ts, subscriptions.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
+│                               #   categories.ts, subscriptions.ts, domains.ts, dashboard.ts, notifications.ts, mail.ts (Brevo)
 ├── scripts/seed-admin.mjs      # admin seed (npm run seed)
 ├── services/  types/  hooks/
 └── app/globals.css             # ★ DESIGN TOKENS: change CSS variables here → whole site restyles
@@ -65,7 +66,7 @@ There is **no public registration** — exactly one admin exists.
 
 ```bash
 # 1. Create the database, then apply schema in order:
-psql -d subflow -f database/init/001_create_admins.sql   # …002, 003, 004, 005
+psql -d subflow -f database/init/001_create_admins.sql   # …002, 003, 004, 005, 006
 
 # 2. App (UI + API on one port)
 cp .env.example .env && npm install && npm run dev   # :3000
@@ -92,9 +93,36 @@ Yearly recurring = monthly × 12. `total_amount = price + tax_amount` (computed 
 - Dashboard: 8 summary cards, monthly-expenses chart (Recharts), category donut, upcoming renewals (7/15/30-day tabs), recently added.
 - Categories: full CRUD, search/sort, subscription counts + expense per category; **delete is blocked (HTTP 409) while subscriptions exist**.
 - Subscriptions: full CRUD with the A–E sectioned form (RHF + Zod, auto total), list with search, 5 filters, sorting, pagination, clear-filters; view/edit/delete happens in the slide-over panel on All Subscriptions.
+- Domains: full CRUD for organisation domains (Internal / External) — see the Domains module section below.
 - Renewals page: grouped Overdue / 7 / 15 / 30 days.
 - Notifications: header bell + page; renewal overdue/upcoming and payment-failed alerts generated from live data, with optional Brevo email to the admin.
 - Settings: change email + change password (working, via `/api/auth/*`), real admin info from `/api/auth/me` + working logout.
+
+## Domains Management module
+
+Manage every organisation domain next to the subscriptions: where it was **purchased** (registrar), who **manages** it (kept as a separate field — a domain can be bought on GoDaddy and managed on Cloudflare), what it costs, and when it expires. Page: `/dashboard/domains` (sidebar → Domains), with search, filters (type / project / registrar / manager / status), sorting (expiry, purchase cost, name), pagination, and the same slide-over drawer pattern as subscriptions for view / edit / delete (delete asks for confirmation). The form has sections A–E: Basic, Purchase, Management, Expiry & Renewal, Additional.
+
+**API (all behind the single-admin session, same envelope as the rest of the app):**
+
+| Endpoint | What |
+|---|---|
+| `GET /api/domains` | List — `search`, `type`, `project`, `registrar`, `manager`, `status`, `sort` (`expiry_date` / `purchase_cost` / `domain_name` / `created_at`), `order`, `page`, `limit` |
+| `POST /api/domains` | Create (domain name is trimmed + lowercased; duplicates → `409 Domain with this name already exists`) |
+| `GET /api/domains/[id]` | Details (includes computed `days_remaining`) |
+| `PATCH /api/domains/[id]` | Update (merged with the stored row; activity notification carries a diff of the key fields) |
+| `DELETE /api/domains/[id]` | Delete → `{ deleted: true }` |
+| `GET /api/domains/upcoming-expiries` | Expiring within the next 30 days (status ≠ cancelled) |
+| `GET /api/domains/expired` | Expiry date in the past (status ≠ cancelled) |
+| `GET /api/domains/statistics` | Counts, per-currency costs, breakdowns by type and by project, next 5 upcoming renewals |
+| `GET /api/domains/projects` | Facets for the UI: distinct `{ projects, registrars, managers }` |
+
+**Project association:** SubFlow has **no projects system/table**, so a domain stores an optional free-text `project_name` — the form offers the distinct names already in use via a datalist (and you can type a new one), the list/details/filter all use it, one project can have many domains, and a domain can have none (`No project` in breakdowns). The `project_id UUID` column exists but is intentionally **without a foreign key**, reserved for a future projects table; deleting a domain never touches any project data.
+
+**Expiry tracking & notifications:** `days_remaining` is computed in SQL from the stored `expiry_date`. The notification sync (the same one that produces subscription renewal alerts) also generates `domain_expiry_upcoming` — when a domain has its reminder enabled and `days_remaining <= reminder_days_before` (3/7/15/30) — and `domain_expired`, each **deduped per domain + expiry date (+ reminder period)**, and newly created ones get the same Brevo email as renewal alerts. Add / update (with a key-field diff) / delete of a domain are recorded as activity notifications, like subscriptions and categories.
+
+**Costs:** purchase cost and renewal cost are stored separately, with currency and billing cycle. All totals are **grouped by currency and never combined across currencies**. The yearly figure normalises the effective cost (renewal cost when set, otherwise purchase cost): monthly × 12, yearly × 1, custom × (365.25 ÷ custom days). Domain statistics (total / internal / external / active / expired / expiring soon, cost totals, upcoming renewals) are computed live from the `domains` table and also shown on the main dashboard under "Domain Overview" — completely separate from subscription expenses.
+
+**Schema:** `database/init/006_create_domains.sql` (fresh installs). Because existing database volumes never re-run init scripts, `lib/domains.ts` also bootstraps the identical DDL lazily (`CREATE TABLE / INDEX IF NOT EXISTS`) on first use — the same pattern the notifications table uses. Domain attachments are **not** supported (SubFlow has no file-upload infrastructure); the invoice/purchase reference is stored as text.
 
 ## Styling
 

@@ -14,6 +14,11 @@ export interface NotificationItem {
     | 'category_deleted'
     | 'settings_email_changed'
     | 'settings_password_changed'
+    | 'domain_created'
+    | 'domain_updated'
+    | 'domain_deleted'
+    | 'domain_expiry_upcoming'
+    | 'domain_expired'
     | string;
   title: string;
   message: string;

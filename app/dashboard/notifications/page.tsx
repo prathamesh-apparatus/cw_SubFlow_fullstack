@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, BellOff, CalendarClock, CalendarX, CheckCheck, CreditCard, FolderEdit, FolderPlus, FolderX, Loader2, Mail, Pencil, PlusCircle, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlarmClock, AlertOctagon, Bell, BellOff, CalendarClock, CalendarX, CheckCheck, CreditCard, FolderEdit, FolderPlus, FolderX, Globe, Loader2, Mail, Pencil, PlusCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,11 @@ const META: Record<string, { icon: typeof Bell; cls: string }> = {
   category_deleted: { icon: FolderX, cls: 'bg-rose-50 text-rose-600' },
   settings_email_changed: { icon: Mail, cls: 'bg-slate-100 text-slate-600' },
   settings_password_changed: { icon: ShieldCheck, cls: 'bg-slate-100 text-slate-600' },
+  domain_created: { icon: Globe, cls: 'bg-emerald-50 text-emerald-600' },
+  domain_updated: { icon: Pencil, cls: 'bg-blue-50 text-blue-600' },
+  domain_deleted: { icon: Trash2, cls: 'bg-rose-50 text-rose-600' },
+  domain_expiry_upcoming: { icon: AlarmClock, cls: 'bg-amber-50 text-amber-600' },
+  domain_expired: { icon: AlertOctagon, cls: 'bg-rose-50 text-rose-600' },
 };
 
 function timeAgo(iso: string): string {

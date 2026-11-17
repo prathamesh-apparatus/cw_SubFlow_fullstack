@@ -5,9 +5,10 @@
 // the same dedupe keys and emails only the newly inserted ones via Brevo.
 import { query } from './db';
 import { sendNotificationEmail } from './mail';
+import { ensureDomainsTable } from './domains';
 
 interface Candidate {
-  subscription_id: string;
+  subscription_id: string | null;
   type: string;
   title: string;
   message: string;
@@ -101,6 +102,59 @@ async function candidates(): Promise<Candidate[]> {
       dedupe_key: `payment_failed:${s.id}:${dateKey(s.updated_at)}`,
       sub: s,
     });
+  }
+  // Domain expiry alerts (same insert + dedupe + email flow as the renewal
+  // alerts above). Wrapped so a missing/failed domains table can never break
+  // the subscription sync.
+  try {
+    await ensureDomainsTable();
+    const [dUpcoming, dExpired] = await Promise.all([
+      query(
+        `SELECT *, (expiry_date - CURRENT_DATE) AS days_remaining FROM domains WHERE renewal_reminder_enabled = TRUE AND expiry_date IS NOT NULL AND status NOT IN ('cancelled','expired') AND (expiry_date - CURRENT_DATE) <= reminder_days_before AND (expiry_date - CURRENT_DATE) >= 0`,
+      ),
+      query(
+        `SELECT * FROM domains WHERE expiry_date < CURRENT_DATE AND status NOT IN ('cancelled')`,
+      ),
+    ]);
+    for (const d of dUpcoming.rows) {
+      const days = Number(d.days_remaining) || 0;
+      out.push({
+        subscription_id: null,
+        type: 'domain_expiry_upcoming',
+        title: 'Domain expiring soon',
+        message: `${d.domain_name} expires on ${fmtDate(d.expiry_date)} (${days} days remaining).`,
+        dedupe_key: `domain_expiry:${d.id}:${dateKey(d.expiry_date)}:${d.reminder_days_before}`,
+        sub: {
+          kind: 'domain',
+          name: d.domain_name,
+          managed_by: d.managed_by,
+          total_amount: d.renewal_cost ?? d.purchase_cost,
+          currency: d.currency,
+          next_renewal_date: d.expiry_date,
+          status: d.status,
+        },
+      });
+    }
+    for (const d of dExpired.rows) {
+      out.push({
+        subscription_id: null,
+        type: 'domain_expired',
+        title: 'Domain expired',
+        message: `${d.domain_name} expired on ${fmtDate(d.expiry_date)}.`,
+        dedupe_key: `domain_expired:${d.id}:${dateKey(d.expiry_date)}`,
+        sub: {
+          kind: 'domain',
+          name: d.domain_name,
+          managed_by: d.managed_by,
+          total_amount: d.renewal_cost ?? d.purchase_cost,
+          currency: d.currency,
+          next_renewal_date: d.expiry_date,
+          status: d.status,
+        },
+      });
+    }
+  } catch (e) {
+    console.error('[notifications] domain candidates failed:', e);
   }
   return out;
 }

@@ -14,6 +14,8 @@ type Rule =
   | { kind: 'minLength'; value: number }
   | { kind: 'maxLength'; value: number }
   | { kind: 'notEmpty' }
+  | { kind: 'date' }
+  | { kind: 'domain' }
   | { kind: 'in'; values: (string | number)[] };
 
 interface FieldSpec {
@@ -26,6 +28,15 @@ interface FieldSpec {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const DOMAIN_RE = /^(?=.{1,253}$)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDate(value: unknown): boolean {
+  if (typeof value !== 'string' || !ISO_DATE_RE.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
 
 function checkRule(field: string, value: any, rule: Rule): string | null {
   switch (rule.kind) {
@@ -55,6 +66,12 @@ function checkRule(field: string, value: any, rule: Rule): string | null {
         : `${field} must be shorter than or equal to ${rule.value} characters`;
     case 'notEmpty':
       return value !== '' && value !== null && value !== undefined ? null : `${field} should not be empty`;
+    case 'date':
+      return isValidIsoDate(value) ? null : `${field} must be a valid ISO 8601 date string`;
+    case 'domain':
+      return typeof value === 'string' && DOMAIN_RE.test(value.trim())
+        ? null
+        : `${field} must be a valid domain name`;
     case 'in':
       return rule.values.includes(value)
         ? null
@@ -145,3 +162,39 @@ export const subscriptionSpec: FieldSpec[] = [
   { name: 'auto_renewal_enabled', optional: true, rules: [{ kind: 'boolean' }] },
   { name: 'notes', optional: true, rules: [{ kind: 'string' }] },
 ];
+
+const domainFields: FieldSpec[] = [
+  { name: 'domain_name', rules: [{ kind: 'string' }, { kind: 'notEmpty' }, { kind: 'domain' }] },
+  { name: 'domain_type', optional: true, rules: [{ kind: 'in', values: ['internal', 'external'] }] },
+  { name: 'description', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'project_id', optional: true, rules: [{ kind: 'uuid' }] },
+  { name: 'project_name', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'purchased_from', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'purchase_date', optional: true, rules: [{ kind: 'date' }] },
+  { name: 'purchase_cost', optional: true, coerceNumber: true, rules: [{ kind: 'number' }, { kind: 'min', value: 0 }] },
+  { name: 'currency', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'billing_cycle', optional: true, rules: [{ kind: 'in', values: ['monthly', 'yearly', 'custom'] }] },
+  { name: 'custom_billing_days', optional: true, coerceNumber: true, rules: [{ kind: 'int' }, { kind: 'min', value: 1 }] },
+  { name: 'invoice_reference', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'managed_by', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'management_platform', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'account_email', optional: true, rules: [{ kind: 'email' }] },
+  { name: 'responsible_person', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'nameservers', optional: true, rules: [{ kind: 'string' }] },
+  { name: 'registration_date', optional: true, rules: [{ kind: 'date' }] },
+  { name: 'expiry_date', optional: true, rules: [{ kind: 'date' }] },
+  { name: 'next_renewal_date', optional: true, rules: [{ kind: 'date' }] },
+  { name: 'renewal_cost', optional: true, coerceNumber: true, rules: [{ kind: 'number' }, { kind: 'min', value: 0 }] },
+  { name: 'auto_renewal_enabled', optional: true, rules: [{ kind: 'boolean' }] },
+  { name: 'renewal_reminder_enabled', optional: true, rules: [{ kind: 'boolean' }] },
+  { name: 'reminder_days_before', optional: true, coerceNumber: true, rules: [{ kind: 'in', values: [3, 7, 15, 30] }] },
+  { name: 'status', optional: true, rules: [{ kind: 'in', values: ['active', 'inactive', 'expired', 'pending', 'cancelled'] }] },
+  { name: 'notes', optional: true, rules: [{ kind: 'string' }] },
+];
+
+export const createDomainSpec: FieldSpec[] = domainFields;
+
+/** PATCH: every field optional (including domain_name); the service merges with the stored row. */
+export const updateDomainSpec: FieldSpec[] = domainFields.map((f) =>
+  f.name === 'domain_name' ? { ...f, optional: true } : f,
+);
