@@ -301,8 +301,17 @@ export async function expiredDomains() {
   return rows;
 }
 
-/** Yearly-normalised domain cost: effective cost is renewal cost when set, else purchase cost. */
-const YEARLY = `CASE d.billing_cycle WHEN 'monthly' THEN COALESCE(d.renewal_cost, d.purchase_cost) * 12 WHEN 'yearly' THEN COALESCE(d.renewal_cost, d.purchase_cost) WHEN 'custom' THEN COALESCE(d.renewal_cost, d.purchase_cost) * 365.25 / NULLIF(d.custom_billing_days,0) ELSE COALESCE(d.renewal_cost, d.purchase_cost) END`;
+/** Effective domain cost: renewal cost when it is set AND > 0, else purchase cost (0 when neither).
+ *  A stored renewal_cost of 0 therefore falls back to the purchase cost instead of zeroing the domain. */
+export const DOMAIN_EFFECTIVE_COST = `COALESCE(CASE WHEN d.renewal_cost > 0 THEN d.renewal_cost ELSE d.purchase_cost END, 0)`;
+
+/** Monthly-normalised domain cost — mirrors the subscription normalisation in lib/dashboard.ts. */
+export const DOMAIN_MONTHLY = `COALESCE(CASE d.billing_cycle WHEN 'monthly' THEN ${DOMAIN_EFFECTIVE_COST} WHEN 'yearly' THEN ${DOMAIN_EFFECTIVE_COST} / 12 WHEN 'custom' THEN ${DOMAIN_EFFECTIVE_COST} * 30.4375 / NULLIF(d.custom_billing_days,0) ELSE ${DOMAIN_EFFECTIVE_COST} END, 0)`;
+
+/** Yearly-normalised domain cost, using the same effective-cost rule. */
+export const DOMAIN_YEARLY = `COALESCE(CASE d.billing_cycle WHEN 'monthly' THEN ${DOMAIN_EFFECTIVE_COST} * 12 WHEN 'yearly' THEN ${DOMAIN_EFFECTIVE_COST} WHEN 'custom' THEN ${DOMAIN_EFFECTIVE_COST} * 365.25 / NULLIF(d.custom_billing_days,0) ELSE ${DOMAIN_EFFECTIVE_COST} END, 0)`;
+
+const YEARLY = DOMAIN_YEARLY;
 
 const num = (v: any) => (v === null || v === undefined ? 0 : Number(v));
 
