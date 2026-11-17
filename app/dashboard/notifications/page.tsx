@@ -5,6 +5,7 @@ import { AlarmClock, AlertOctagon, Bell, BellOff, CalendarClock, CalendarX, Chec
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import { Pagination } from '@/components/ui/pagination';
 import { notificationsService, type NotificationItem } from '@/services/notifications.service';
 import { cn, formatDate } from '@/lib/utils';
@@ -48,13 +49,23 @@ export default function NotificationsPage() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState<{ ids: string[]; title?: string } | null>(null);
+  const [delLoading, setDelLoading] = useState(false);
 
-  useEffect(() => {
-    notificationsService.list()
-      .then((r) => { setItems(r.items || []); setUnread(r.unread || 0); setPage(1); })
-      .catch(() => toast.error('Could not load notifications'))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async (keepPage = false) => {
+    try {
+      const r = await notificationsService.list();
+      const fresh = r.items || [];
+      setItems(fresh);
+      setUnread(r.unread || 0);
+      setPage((p) => (keepPage ? Math.min(p, Math.max(1, Math.ceil(fresh.length / PAGE_SIZE))) : 1));
+    } catch { toast.error('Could not load notifications'); }
+  };
+
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
+  // Selection is page-scoped: any page change clears it.
+  useEffect(() => { setSelected(new Set()); }, [page]);
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
@@ -79,6 +90,37 @@ export default function NotificationsPage() {
     } catch { toast.error('Could not mark notifications as read'); }
   };
 
+  const pageIds = pageItems.map((n) => n.id);
+  const selectedOnPage = pageIds.filter((id) => selected.has(id)).length;
+  const allPageSelected = pageIds.length > 0 && selectedOnPage === pageIds.length;
+
+  const toggleOne = (id: string) => setSelected((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const togglePage = () => setSelected((prev) => {
+    const next = new Set(prev);
+    if (allPageSelected) pageIds.forEach((id) => next.delete(id));
+    else pageIds.forEach((id) => next.add(id));
+    return next;
+  });
+
+  const onDelete = async () => {
+    if (!deleting) return;
+    const single = deleting.ids.length === 1;
+    setDelLoading(true);
+    try {
+      const r = await notificationsService.removeMany(deleting.ids);
+      const n = r.deleted ?? deleting.ids.length;
+      toast.success(single ? 'Notification deleted' : `${n} notification${n === 1 ? '' : 's'} deleted`);
+      setDeleting(null);
+      setSelected(new Set());
+      await load(true);
+    } catch { toast.error(single ? 'Could not delete notification' : 'Could not delete notifications'); }
+    finally { setDelLoading(false); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -101,25 +143,56 @@ export default function NotificationsPage() {
       ) : (
         <>
         <Card className="overflow-hidden">
+          <div className="flex h-11 items-center gap-3 border-b px-5">
+            <label className="flex cursor-pointer select-none items-center gap-2 text-xs font-medium text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={allPageSelected}
+                ref={(el) => { if (el) el.indeterminate = selectedOnPage > 0 && !allPageSelected; }}
+                onChange={togglePage}
+                aria-label="Select all notifications on this page"
+                className="h-4 w-4 shrink-0 rounded accent-emerald-600"
+              />
+              Select all
+            </label>
+            {selected.size > 0 && (
+              <span className="ml-auto flex items-center gap-1.5">
+                <Button variant="destructive" size="sm" onClick={() => setDeleting({ ids: Array.from(selected) })}><Trash2 className="h-3.5 w-3.5" /> Delete selected ({selected.size})</Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>Clear selection</Button>
+              </span>
+            )}
+          </div>
           <div className="divide-y divide-border">
             {pageItems.map((n) => {
               const meta = META[n.type] || { icon: Bell, cls: 'bg-secondary text-muted-foreground' };
               const Icon = meta.icon;
               return (
-                <button key={n.id} onClick={() => open(n)} className={cn('flex w-full items-start gap-3 px-5 py-3.5 text-left transition hover:bg-accent/40', !n.is_read && 'bg-emerald-50/40')}>
-                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', meta.cls)}><Icon className="h-4 w-4" /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className={cn('block truncate text-[13px] text-foreground', n.is_read ? 'font-medium' : 'font-semibold')}>{n.title}</span>
-                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{n.message}</span>
-                    <span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</span>
-                  </span>
-                  {!n.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
-                </button>
+                <div key={n.id} className={cn('flex items-start gap-3 px-5 py-3.5 transition hover:bg-accent/40', !n.is_read && 'bg-emerald-50/40')}>
+                  <input type="checkbox" checked={selected.has(n.id)} onChange={() => toggleOne(n.id)} aria-label={`Select "${n.title}"`} className="mt-2.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-emerald-600" />
+                  <button onClick={() => open(n)} className="flex min-w-0 flex-1 items-start gap-3 text-left">
+                    <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', meta.cls)}><Icon className="h-4 w-4" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className={cn('block truncate text-[13px] text-foreground', n.is_read ? 'font-medium' : 'font-semibold')}>{n.title}</span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{n.message}</span>
+                      <span className="mt-1 block text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</span>
+                    </span>
+                    {!n.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
+                  </button>
+                  <button onClick={() => setDeleting({ ids: [n.id], title: n.title })} aria-label="Delete notification" className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
               );
             })}
           </div>
         </Card>
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <ConfirmDialog
+          open={!!deleting}
+          onClose={() => setDeleting(null)}
+          onConfirm={onDelete}
+          loading={delLoading}
+          title={deleting && deleting.ids.length > 1 ? `Delete ${deleting.ids.length} selected notifications?` : 'Delete notification?'}
+          description={deleting && deleting.ids.length > 1 ? `Delete ${deleting.ids.length} selected notifications permanently? This cannot be undone.` : `Delete "${deleting?.title ?? 'this notification'}" permanently? This cannot be undone.`}
+        />
         </>
       )}
     </div>

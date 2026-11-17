@@ -31,4 +31,5 @@ export const notificationsService = {
   unreadCount: () => api.get<{ unread: number }>('/notifications/unread-count'),
   markRead: (id: string) => api.post<{ id: string; is_read: boolean }>(`/notifications/${id}/read`),
   markAllRead: () => api.post<{ updated: number }>('/notifications/read-all'),
+  removeMany: (ids: string[]) => api.delete<{ deleted: number }>('/notifications', { ids }),
 };

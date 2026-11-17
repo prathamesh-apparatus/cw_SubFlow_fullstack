@@ -232,3 +232,22 @@ export async function markAllRead() {
   const r = await query('UPDATE notifications SET is_read = TRUE WHERE is_read = FALSE');
   return { updated: r.rowCount ?? 0 };
 }
+
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/**
+ * Bulk-delete notifications by id. Non-array / empty / all-invalid input
+ * deletes nothing and returns 0 — never throws for bad input. Note: sync-
+ * generated alert rows (renewal_overdue, domain_expiry_upcoming, …) are
+ * re-created by syncNotifications() from their dedupe keys, so a deleted
+ * alert whose condition still holds may reappear on a later sync. That is
+ * expected; activity rows (evt: keys) never come back.
+ */
+export async function deleteNotifications(ids: string[]): Promise<number> {
+  await ensureNotificationsTable();
+  if (!Array.isArray(ids)) return 0;
+  const valid = Array.from(new Set(ids.filter((id) => typeof id === 'string' && UUID_RE.test(id))));
+  if (!valid.length) return 0;
+  const r = await query('DELETE FROM notifications WHERE id = ANY($1::uuid[])', [valid]);
+  return r.rowCount ?? 0;
+}
