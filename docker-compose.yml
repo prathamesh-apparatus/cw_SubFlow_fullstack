@@ -1,7 +1,8 @@
-# SubFlow backend stack ONLY (Postgres + NestJS backend). The frontend is NOT in Docker —
-# run it with npm:  cd frontend && npm i && npm run dev
-# Whole backend in ONE command (from project root):  docker compose --env-file backend/.env up -d --build
-# No root .env — backend env lives in backend/.env, frontend env in frontend/.env.
+# SubFlow database ONLY. The app itself (UI + API) runs entirely in Next.js —
+# there is no separate backend service anymore.
+# Start the database with ONE command (from project root):  docker compose --env-file frontend/.env up -d
+# Then run the app:  cd frontend && npm i && npm run dev
+# No root .env — all env lives in frontend/.env.
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,27 +16,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/database/init:/docker-entrypoint-initdb.d:ro
+      - ./frontend/database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-subflow} -d ${DATABASE_NAME:-subflow}"]
       interval: 5s
       timeout: 5s
       retries: 10
-    networks: [subflow_net]
-  backend:
-    build: ./backend
-    container_name: subflow_backend
-    restart: unless-stopped
-    env_file: [./backend/.env]
-    environment:
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      BACKEND_PORT: 4000
-    ports:
-      - "4000:4000"
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks: [subflow_net]
 volumes:
   postgres_data:
