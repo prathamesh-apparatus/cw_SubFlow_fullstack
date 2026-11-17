@@ -2,7 +2,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -23,6 +23,7 @@ function Inner() {
   const [drawer, setDrawer] = useState<{ id: string; mode: 'view' | 'edit' } | null>(null);
   const [f, setF] = useState({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v, page: k === 'page' ? v : '1' }));
+  const clear = () => setF({ search: '', category_id: '', billing_cycle: '', payment_status: '', status: '', auto_pay_enabled: '', sort: 'created_desc', page: '1', limit: '10' });
   const sp = useSearchParams();
   const router = useRouter();
   useEffect(() => { const q = sp.get('q'); if (q !== null) setF((p) => (p.search === q ? p : { ...p, search: q, page: '1' })); }, [sp]);
@@ -55,7 +56,7 @@ function Inner() {
         <Select className="h-9 rounded-full text-[13px]" value={f.sort} onChange={(e) => set('sort', e.target.value)}><option value="created_desc">Newest</option><option value="price_desc">Price: High → Low</option><option value="price_asc">Price: Low → High</option><option value="renewal_asc">Renewal: Soonest</option><option value="renewal_desc">Renewal: Latest</option></Select>
         </div>
       </div>
-      <div className="flex items-center justify-between border-t px-4 py-2"><p className="text-sm text-muted-foreground">{total} subscription(s)</p></div>
+      <div className="flex items-center justify-between border-t px-4 py-2"><p className="text-sm text-muted-foreground">{total} subscription(s)</p><Button variant="ghost" size="sm" onClick={clear}><X className="h-4 w-4" /> Clear all filters</Button></div>
       {loading ? <p className="py-12 text-center text-muted-foreground">Loading…</p> : <SubscriptionTable items={items} onDelete={setDeleting} onView={(s) => setDrawer({ id: s.id, mode: 'view' })} onEdit={(s) => setDrawer({ id: s.id, mode: 'edit' })} />}
       <div className="border-t px-4 py-3 [&>div]:mt-0"><Pagination page={Number(f.page)} totalPages={totalPages} alwaysShow onPageChange={(p) => set('page', String(p))} /></div>
       </Card>
